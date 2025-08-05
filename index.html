@@ -42,7 +42,6 @@
     </div>
     
     <script type="text/babel">
-        // Aguardar que tudo carregue
         window.addEventListener('load', function() {
             console.log('Página carregada, iniciando sistema...');
             
@@ -53,7 +52,6 @@
               AlertCircle, CheckCircle, Calendar, Hash 
             } = lucide;
             
-            // Hook para localStorage (substituindo o hatch)
             const useStoredState = (key, initialValue) => {
               const [value, setValue] = useState(() => {
                 try {
@@ -75,10 +73,8 @@
               return [value, setValue];
             };
 
-            // Simular o objeto hatch
             window.hatch = { useStoredState };
             
-            // Dados iniciais e configurações
             const CARGOS = [
               'CEO', 'Diretor', 'Alta Cúpula', 'ADM Staff',
               'RESP Comunidade', 'Mentoria', 'Staff Geral'
@@ -102,7 +98,6 @@
 
             const TURNOS = ['Manhã', 'Tarde', 'Noite'];
             
-            // Componente principal
             const MetaXAuditSystem = () => {
               const [currentUser, setCurrentUser] = useStoredState('currentUser', null);
               const [users, setUsers] = useStoredState('users', [
@@ -121,7 +116,6 @@
               const [currentView, setCurrentView] = useStoredState('currentView', 'login');
               const [notifications, setNotifications] = useStoredState('notifications', []);
 
-              // Verificar permissões
               const canValidateChecklist = (user) => {
                 return ['CEO', 'Diretor', 'Alta Cúpula'].includes(user?.cargo);
               };
@@ -134,7 +128,6 @@
                 return ['CEO', 'Diretor'].includes(user?.cargo);
               };
 
-              // Componente de Login
               const LoginForm = () => {
                 const [loginData, setLoginData] = useState({ id: '', senha: '' });
                 const [registerData, setRegisterData] = useState({
@@ -272,7 +265,6 @@
                 );
               };
 
-              // Header do sistema
               const Header = () => React.createElement('div', { className: "bg-white shadow-lg border-b-4 border-purple-500" },
                 React.createElement('div', { className: "max-w-7xl mx-auto px-4 py-4" },
                   React.createElement('div', { className: "flex items-center justify-between" },
@@ -302,19 +294,22 @@
                 )
               );
 
-              // Menu lateral
               const Sidebar = () => {
                 const menuItems = [
                   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
                   { id: 'checklist', label: 'Checklist', icon: CheckSquare },
                   { id: 'auditoria', label: 'Auditoria', icon: FileText },
-                  { id: 'painel-cidade', label: 'Painel da Cidade', icon: Users },
-                  ...(canApproveUsers(currentUser) ? [{ id: 'admin', label: 'Administração', icon: Settings }] : [])
+                  { id: 'painel-cidade', label: 'Painel da Cidade', icon: Users }
                 ];
+
+                if (canApproveUsers(currentUser)) {
+                  menuItems.push({ id: 'admin', label: 'Administração', icon: Settings });
+                }
 
                 return React.createElement('div', { className: "bg-gray-900 text-white w-64 min-h-screen" },
                   React.createElement('div', { className: "p-4" },
                     menuItems.map(item => {
+                      const IconComponent = item.icon;
                       return React.createElement('button', {
                         key: item.id,
                         onClick: () => setCurrentView(item.id),
@@ -322,7 +317,7 @@
                           currentView === item.id ? 'bg-purple-600' : 'hover:bg-gray-800'
                         }`
                       },
-                        React.createElement(item.icon, { className: "w-5 h-5" }),
+                        React.createElement(IconComponent, { className: "w-5 h-5" }),
                         React.createElement('span', null, item.label)
                       );
                     })
@@ -330,7 +325,6 @@
                 );
               };
 
-              // Dashboard Principal  
               const Dashboard = () => {
                 const myChecklists = checklists.filter(c => c.autorId === currentUser.id);
                 const myAuditorias = auditorias.filter(a => a.autorId === currentUser.id);
@@ -409,7 +403,6 @@
                 );
               };
 
-              // Componente de Checklist (simplificado)
               const ChecklistComponent = () => {
                 return React.createElement('div', { className: "p-6" },
                   React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Checklist'),
@@ -438,7 +431,6 @@
                 );
               };
 
-              // Painel da Cidade  
               const PainelCidade = () => {
                 const checklistsAprovados = checklists.filter(c => c.status === 'aprovado');
                 const auditoriasAprovadas = auditorias.filter(a => a.status === 'aprovada');
@@ -512,7 +504,6 @@
                 );
               };
 
-              // Administração
               const AdminPanel = () => {
                 const approveUser = (userId) => {
                   const user = pendingUsers.find(u => u.id === userId);
@@ -557,7 +548,6 @@
                 );
               };
 
-              // Renderização principal
               if (!currentUser) {
                 return React.createElement(LoginForm);
               }
@@ -576,7 +566,6 @@
               );
             };
 
-            // Renderizar o componente
             try {
               console.log('Iniciando renderização do MetaX...');
               const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -584,7 +573,6 @@
               console.log('✅ Sistema MetaX renderizado com sucesso!');
             } catch (error) {
               console.error('❌ Erro ao renderizar:', error);
-              // Em caso de erro, mostrar uma mensagem mais útil
               document.getElementById('root').innerHTML = `
                 <div style="padding: 2rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white;">
                   <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2);">
