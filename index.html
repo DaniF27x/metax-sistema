@@ -71,6 +71,10 @@
                 // Tela de Login
                 const LoginForm = () => {
                     const [loginData, setLoginData] = useState({ id: '', senha: '' });
+                    const [registerData, setRegisterData] = useState({
+                        nome: '', id: '', senha: '', cargo: 'Staff Geral'
+                    });
+                    const [isRegister, setIsRegister] = useState(false);
 
                     const handleLogin = () => {
                         console.log('🔐 Tentativa de login:', loginData);
@@ -88,9 +92,942 @@
                             setCurrentUser(user);
                             setCurrentView('dashboard');
                         } else {
-                            alert('❌ Login inválido! Verifique suas credenciais.');
+                            alert('❌ ID ou senha incorretos, ou usuário ainda não aprovado!');
                         }
                     };
+
+                    const handleRegister = () => {
+                        if (!registerData.nome || !registerData.id || !registerData.senha) {
+                            alert('⚠️ Preencha todos os campos!');
+                            return;
+                        }
+
+                        const existingUser = [...users, ...pendingUsers].find(u => u.id === registerData.id);
+                        if (existingUser) {
+                            alert('❌ ID já existe! Escolha outro ID.');
+                            return;
+                        }
+
+                        const newUser = {
+                            ...registerData,
+                            status: 'pendente',
+                            createdAt: new Date().toISOString()
+                        };
+
+                        setPendingUsers([...pendingUsers, newUser]);
+                        alert('✅ Cadastro enviado para aprovação! Aguarde a análise de um administrador.');
+                        setIsRegister(false);
+                        setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
+                    };
+
+                // Página de Administração
+                const AdminPage = () => {
+                    const [users, setUsers] = useStoredState('users', []);
+                    const [pendingUsers, setPendingUsers] = useStoredState('pendingUsers', []);
+                    const [checklists, setChecklists] = useStoredState('checklists', []);
+                    const [auditorias, setAuditorias] = useStoredState('auditorias', []);
+
+                    // Verificar se o usuário tem permissão
+                    if (!['CEO', 'Diretor'].includes(currentUser?.cargo)) {
+                        return h('div', { style: { minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+                            h('div', { style: { textAlign: 'center', background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                h('h2', { style: { color: '#ef4444', marginBottom: '1rem' } }, '🚫 Acesso Negado'),
+                                h('p', { style: { color: '#6b7280', marginBottom: '1rem' } }, 'Apenas CEOs e Diretores podem acessar esta área.'),
+                                h('button', {
+                                    onClick: () => setCurrentView('dashboard'),
+                                    style: { background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                }, 'Voltar ao Dashboard')
+                            )
+                        );
+                    }
+
+                    const approveUser = (userId) => {
+                        const user = pendingUsers.find(u => u.id === userId);
+                        if (user) {
+                            setUsers([...users, { ...user, status: 'aprovado' }]);
+                            setPendingUsers(pendingUsers.filter(u => u.id !== userId));
+                            alert('✅ Usuário aprovado com sucesso!');
+                        }
+                    };
+
+                    const rejectUser = (userId) => {
+                        setPendingUsers(pendingUsers.filter(u => u.id !== userId));
+                        alert('❌ Usuário rejeitado!');
+                    };
+
+                    const approveChecklist = (checklistId) => {
+                        setChecklists(checklists.map(c => 
+                            c.id === checklistId ? { 
+                                ...c, 
+                                status: 'aprovado', 
+                                approvedBy: currentUser.id, 
+                                approvedAt: new Date().toISOString() 
+                            } : c
+                        ));
+                        alert('✅ Checklist aprovado!');
+                    };
+
+                    const approveAuditoria = (auditoriaId) => {
+                        setAuditorias(auditorias.map(a => 
+                            a.id === auditoriaId ? { 
+                                ...a, 
+                                status: 'aprovada', 
+                                approvedBy: currentUser.id, 
+                                approvedAt: new Date().toISOString() 
+                            } : a
+                        ));
+                        alert('✅ Auditoria aprovada!');
+                    };
+
+                    const checklistsPendentes = checklists.filter(c => c.status === 'aguardando_aprovacao');
+                    const auditoriasPendentes = auditorias.filter(a => a.status === 'aguardando_aprovacao');
+
+                    return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                        // Header
+                        h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                            h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Administração'),
+                                h('button', {
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('login');
+                                    },
+                                    style: { background: '#ef4444', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                }, 'Sair')
+                            )
+                        ),
+                        
+                        h('div', { style: { display: 'flex' } },
+                            // Sidebar
+                            h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
+                                h('div', { style: { padding: '1rem' } },
+                                    ['dashboard', 'checklist', 'auditoria', 'painel', 'admin'].map(view => 
+                                        h('button', {
+                                            key: view,
+                                            onClick: () => setCurrentView(view),
+                                            style: {
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                padding: '0.75rem',
+                                                background: currentView === view ? '#8b5cf6' : 'transparent',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                marginBottom: '0.5rem'
+                                            }
+                                        }, 
+                                        view === 'dashboard' ? '📊 Dashboard' :
+                                        view === 'checklist' ? '✅ Checklist' :
+                                        view === 'auditoria' ? '🔍 Auditoria' :
+                                        view === 'painel' ? '🏙️ Painel da Cidade' : '⚙️ Administração'
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            // Conteúdo principal
+                            h('div', { style: { flex: 1, padding: '2rem' } },
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, 'Painel de Administração'),
+                                
+                                // Cards de estatísticas
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' } },
+                                    h('div', { style: { background: '#fef3c7', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center' } },
+                                        h('div', { style: { fontSize: '2rem', marginBottom: '0.5rem' } }, '👥'),
+                                        h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#92400e', margin: 0 } }, pendingUsers.length),
+                                        h('p', { style: { color: '#78716c', fontSize: '0.875rem', margin: 0 } }, 'Usuários Pendentes')
+                                    ),
+                                    h('div', { style: { background: '#dbeafe', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center' } },
+                                        h('div', { style: { fontSize: '2rem', marginBottom: '0.5rem' } }, '✅'),
+                                        h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1e40af', margin: 0 } }, checklistsPendentes.length),
+                                        h('p', { style: { color: '#6b7280', fontSize: '0.875rem', margin: 0 } }, 'Checklists Pendentes')
+                                    ),
+                                    h('div', { style: { background: '#f3e8ff', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center' } },
+                                        h('div', { style: { fontSize: '2rem', marginBottom: '0.5rem' } }, '🔍'),
+                                        h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#7c2d12', margin: 0 } }, auditoriasPendentes.length),
+                                        h('p', { style: { color: '#6b7280', fontSize: '0.875rem', margin: 0 } }, 'Auditorias Pendentes')
+                                    ),
+                                    h('div', { style: { background: '#ecfdf5', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center' } },
+                                        h('div', { style: { fontSize: '2rem', marginBottom: '0.5rem' } }, '👤'),
+                                        h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#166534', margin: 0 } }, users.length),
+                                        h('p', { style: { color: '#6b7280', fontSize: '0.875rem', margin: 0 } }, 'Usuários Ativos')
+                                    )
+                                ),
+
+                                // Usuários pendentes de aprovação
+                                pendingUsers.length > 0 && h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '2rem' } },
+                                    h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' } }, 
+                                        '👥 Usuários Pendentes de Aprovação'
+                                    ),
+                                    h('div', { style: { display: 'grid', gap: '1rem' } },
+                                        pendingUsers.map(user => 
+                                            h('div', { 
+                                                key: user.id,
+                                                style: { 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: 'center', 
+                                                    padding: '1rem', 
+                                                    border: '1px solid #fed7aa', 
+                                                    borderRadius: '0.5rem',
+                                                    background: '#fff7ed'
+                                                }
+                                            },
+                                                h('div', null,
+                                                    h('p', { style: { fontWeight: 'bold', color: '#1f2937' } }, user.nome),
+                                                    h('p', { style: { fontSize: '0.875rem', color: '#6b7280' } }, `ID: ${user.id} | Cargo: ${user.cargo}`),
+                                                    h('p', { style: { fontSize: '0.75rem', color: '#9ca3af' } }, 
+                                                        `Cadastrado em: ${new Date(user.createdAt).toLocaleDateString('pt-BR')}`
+                                                    )
+                                                ),
+                                                h('div', { style: { display: 'flex', gap: '0.5rem' } },
+                                                    h('button', {
+                                                        onClick: () => approveUser(user.id),
+                                                        style: { 
+                                                            background: '#10b981', 
+                                                            color: 'white', 
+                                                            padding: '0.5rem 1rem', 
+                                                            border: 'none', 
+                                                            borderRadius: '0.25rem', 
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem'
+                                                        }
+                                                    }, '✅ Aprovar'),
+                                                    h('button', {
+                                                        onClick: () => rejectUser(user.id),
+                                                        style: { 
+                                                            background: '#ef4444', 
+                                                            color: 'white', 
+                                                            padding: '0.5rem 1rem', 
+                                                            border: 'none', 
+                                                            borderRadius: '0.25rem', 
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem'
+                                                        }
+                                                    }, '❌ Rejeitar')
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+
+                                // Seção de aprovações
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem' } },
+                                    // Checklists para aprovação
+                                    h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                        h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' } }, 
+                                            '✅ Checklists para Aprovação'
+                                        ),
+                                        checklistsPendentes.length === 0 ? 
+                                            h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhum checklist pendente') :
+                                            h('div', { style: { display: 'grid', gap: '1rem' } },
+                                                checklistsPendentes.map(checklist => 
+                                                    h('div', { 
+                                                        key: checklist.id,
+                                                        style: { 
+                                                            padding: '1rem', 
+                                                            border: '1px solid #bfdbfe', 
+                                                            borderRadius: '0.5rem',
+                                                            background: '#eff6ff'
+                                                        }
+                                                    },
+                                                        h('div', { style: { marginBottom: '0.75rem' } },
+                                                            h('p', { style: { fontWeight: 'bold', color: '#1f2937' } }, 
+                                                                `${checklist.tipo === 'staff' ? 'Staff' : 'RP'} - ${checklist.equipe || checklist.setor}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.875rem', color: '#6b7280' } }, 
+                                                                `Por: ${users.find(u => u.id === checklist.autorId)?.nome || 'Usuário'}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.75rem', color: '#9ca3af' } }, 
+                                                                `Criado: ${new Date(checklist.createdAt).toLocaleDateString('pt-BR')}`
+                                                            )
+                                                        ),
+                                                        h('div', { style: { display: 'flex', gap: '0.5rem' } },
+                                                            h('button', {
+                                                                onClick: () => approveChecklist(checklist.id),
+                                                                style: { 
+                                                                    background: '#10b981', 
+                                                                    color: 'white', 
+                                                                    padding: '0.5rem 1rem', 
+                                                                    border: 'none', 
+                                                                    borderRadius: '0.25rem', 
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }, 'Aprovar'),
+                                                            h('button', {
+                                                                style: { 
+                                                                    background: '#3b82f6', 
+                                                                    color: 'white', 
+                                                                    padding: '0.5rem 1rem', 
+                                                                    border: 'none', 
+                                                                    borderRadius: '0.25rem', 
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }, 'Ver Detalhes')
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                    ),
+
+                                    // Auditorias para aprovação
+                                    h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                        h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' } }, 
+                                            '🔍 Auditorias para Aprovação'
+                                        ),
+                                        auditoriasPendentes.length === 0 ? 
+                                            h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhuma auditoria pendente') :
+                                            h('div', { style: { display: 'grid', gap: '1rem' } },
+                                                auditoriasPendentes.map(auditoria => 
+                                                    h('div', { 
+                                                        key: auditoria.id,
+                                                        style: { 
+                                                            padding: '1rem', 
+                                                            border: '1px solid #c4b5fd', 
+                                                            borderRadius: '0.5rem',
+                                                            background: '#f5f3ff'
+                                                        }
+                                                    },
+                                                        h('div', { style: { marginBottom: '0.75rem' } },
+                                                            h('p', { style: { fontWeight: 'bold', color: '#1f2937' } }, 
+                                                                `${auditoria.tipo} - ${auditoria.setor}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.875rem', color: '#6b7280' } }, 
+                                                                `Por: ${users.find(u => u.id === auditoria.autorId)?.nome || 'Usuário'}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.75rem', color: '#9ca3af' } }, 
+                                                                `Criado: ${new Date(auditoria.createdAt).toLocaleDateString('pt-BR')}`
+                                                            )
+                                                        ),
+                                                        h('div', { style: { display: 'flex', gap: '0.5rem' } },
+                                                            h('button', {
+                                                                onClick: () => approveAuditoria(auditoria.id),
+                                                                style: { 
+                                                                    background: '#10b981', 
+                                                                    color: 'white', 
+                                                                    padding: '0.5rem 1rem', 
+                                                                    border: 'none', 
+                                                                    borderRadius: '0.25rem', 
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }, 'Aprovar'),
+                                                            h('button', {
+                                                                style: { 
+                                                                    background: '#7c3aed', 
+                                                                    color: 'white', 
+                                                                    padding: '0.5rem 1rem', 
+                                                                    border: 'none', 
+                                                                    borderRadius: '0.25rem', 
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }, 'Ver Detalhes')
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                    )
+                                )
+                            )
+                        )
+                    );
+                };
+
+                // Página do Painel da Cidade
+                const PainelCidadePage = () => {
+                    const [checklists] = useStoredState('checklists', []);
+                    const [auditorias] = useStoredState('auditorias', []);
+
+                    const checklistsAprovados = checklists.filter(c => c.status === 'aprovado');
+                    const auditoriasAprovadas = auditorias.filter(a => a.status === 'aprovada');
+                    
+                    const pontuacaoChecklist = Math.min(checklistsAprovados.length * 10, 50);
+                    const pontuacaoAuditoria = Math.min(auditoriasAprovadas.length * 25, 100);
+                    const pontuacaoTotal = pontuacaoChecklist + pontuacaoAuditoria;
+                    
+                    const maxPontuacaoTotal = 150;
+                    const porcentagemTotal = (pontuacaoTotal / maxPontuacaoTotal) * 100;
+
+                    return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                        // Header
+                        h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                            h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Painel da Cidade'),
+                                h('button', {
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('login');
+                                    },
+                                    style: { background: '#ef4444', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                }, 'Sair')
+                            )
+                        ),
+                        
+                        h('div', { style: { display: 'flex' } },
+                            // Sidebar
+                            h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
+                                h('div', { style: { padding: '1rem' } },
+                                    ['dashboard', 'checklist', 'auditoria', 'painel', 'admin'].map(view => 
+                                        h('button', {
+                                            key: view,
+                                            onClick: () => setCurrentView(view),
+                                            style: {
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                padding: '0.75rem',
+                                                background: currentView === view ? '#8b5cf6' : 'transparent',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                marginBottom: '0.5rem'
+                                            }
+                                        }, 
+                                        view === 'dashboard' ? '📊 Dashboard' :
+                                        view === 'checklist' ? '✅ Checklist' :
+                                        view === 'auditoria' ? '🔍 Auditoria' :
+                                        view === 'painel' ? '🏙️ Painel da Cidade' : '⚙️ Administração'
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            // Conteúdo principal
+                            h('div', { style: { flex: 1, padding: '2rem' } },
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, 'Painel Geral da Cidade'),
+                                
+                                // Card principal da pontuação
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '2rem' } },
+                                    h('div', { style: { textAlign: 'center', marginBottom: '2rem' } },
+                                        h('h3', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' } }, '🏙️ Ilusion RP'),
+                                        h('p', { style: { color: '#6b7280', fontSize: '1.125rem' } }, 'Pontuação Acumulada da Cidade')
+                                    ),
+
+                                    // Pontuação total grande
+                                    h('div', { style: { textAlign: 'center', marginBottom: '2rem' } },
+                                        h('div', { style: { fontSize: '4rem', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '0.5rem' } }, pontuacaoTotal),
+                                        h('p', { style: { fontSize: '1.25rem', color: '#6b7280' } }, `de ${maxPontuacaoTotal} pontos possíveis`),
+                                        h('div', { style: { width: '100%', background: '#e5e7eb', borderRadius: '9999px', height: '1rem', marginTop: '1rem' } },
+                                            h('div', { 
+                                                style: { 
+                                                    width: `${porcentagemTotal}%`, 
+                                                    background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', 
+                                                    height: '100%', 
+                                                    borderRadius: '9999px',
+                                                    transition: 'width 1s ease-in-out'
+                                                }
+                                            })
+                                        ),
+                                        h('p', { style: { fontSize: '1rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '0.5rem' } }, 
+                                            `${porcentagemTotal.toFixed(1)}% concluído`
+                                        )
+                                    ),
+
+                                    // Breakdown da pontuação
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' } },
+                                        h('div', { style: { textAlign: 'center', padding: '1.5rem', background: '#dbeafe', borderRadius: '1rem' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, '✅'),
+                                            h('h4', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' } }, 'Checklists'),
+                                            h('div', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6', marginBottom: '0.5rem' } }, `${pontuacaoChecklist}/50`),
+                                            h('div', { style: { width: '100%', background: '#bfdbfe', borderRadius: '9999px', height: '0.5rem' } },
+                                                h('div', { 
+                                                    style: { 
+                                                        width: `${(pontuacaoChecklist / 50) * 100}%`, 
+                                                        background: '#3b82f6', 
+                                                        height: '100%', 
+                                                        borderRadius: '9999px'
+                                                    }
+                                                })
+                                            ),
+                                            h('p', { style: { fontSize: '0.875rem', color: '#1e40af', marginTop: '0.5rem' } }, 
+                                                `${checklistsAprovados.length} aprovados`
+                                            )
+                                        ),
+                                        h('div', { style: { textAlign: 'center', padding: '1.5rem', background: '#dcfce7', borderRadius: '1rem' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, '🔍'),
+                                            h('h4', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' } }, 'Auditorias'),
+                                            h('div', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#10b981', marginBottom: '0.5rem' } }, `${pontuacaoAuditoria}/100`),
+                                            h('div', { style: { width: '100%', background: '#bbf7d0', borderRadius: '9999px', height: '0.5rem' } },
+                                                h('div', { 
+                                                    style: { 
+                                                        width: `${(pontuacaoAuditoria / 100) * 100}%`, 
+                                                        background: '#10b981', 
+                                                        height: '100%', 
+                                                        borderRadius: '9999px'
+                                                    }
+                                                })
+                                            ),
+                                            h('p', { style: { fontSize: '0.875rem', color: '#065f46', marginTop: '0.5rem' } }, 
+                                                `${auditoriasAprovadas.length} aprovadas`
+                                            )
+                                        ),
+                                        h('div', { style: { textAlign: 'center', padding: '1.5rem', background: '#fef3c7', borderRadius: '1rem' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, '🎯'),
+                                            h('h4', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' } }, 'Meta'),
+                                            h('div', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b', marginBottom: '0.5rem' } }, '150'),
+                                            h('p', { style: { fontSize: '0.875rem', color: '#92400e' } }, 'Pontos para excelência'),
+                                            h('p', { style: { fontSize: '0.75rem', color: '#78716c', marginTop: '0.5rem' } }, 
+                                                `Faltam ${150 - pontuacaoTotal} pontos`
+                                            )
+                                        )
+                                    )
+                                ),
+
+                                // Atividades recentes
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' } },
+                                    // Últimos checklists aprovados
+                                    h('div', { style: { background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                        h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' } }, 
+                                            '✅ Últimos Checklists Aprovados'
+                                        ),
+                                        checklistsAprovados.length === 0 ? 
+                                            h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhum checklist aprovado ainda') :
+                                            h('div', { style: { display: 'grid', gap: '0.75rem' } },
+                                                checklistsAprovados.slice(-5).reverse().map(checklist => 
+                                                    h('div', { 
+                                                        key: checklist.id,
+                                                        style: { 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'center', 
+                                                            padding: '0.75rem', 
+                                                            background: '#f0fdf4', 
+                                                            borderRadius: '0.5rem',
+                                                            border: '1px solid #bbf7d0'
+                                                        }
+                                                    },
+                                                        h('div', null,
+                                                            h('p', { style: { fontWeight: 'bold', color: '#166534' } }, 
+                                                                `${checklist.tipo === 'staff' ? 'Staff' : 'RP'} - ${checklist.equipe || checklist.setor}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.75rem', color: '#16a34a' } }, 
+                                                                new Date(checklist.createdAt).toLocaleDateString('pt-BR')
+                                                            )
+                                                        ),
+                                                        h('span', { 
+                                                            style: { 
+                                                                background: '#10b981', 
+                                                                color: 'white', 
+                                                                padding: '0.25rem 0.5rem', 
+                                                                borderRadius: '0.25rem', 
+                                                                fontSize: '0.75rem', 
+                                                                fontWeight: 'bold'
+                                                            }
+                                                        }, '+10 pts')
+                                                    )
+                                                )
+                                            )
+                                    ),
+
+                                    // Últimas auditorias aprovadas
+                                    h('div', { style: { background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                        h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' } }, 
+                                            '🔍 Últimas Auditorias Aprovadas'
+                                        ),
+                                        auditoriasAprovadas.length === 0 ? 
+                                            h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhuma auditoria aprovada ainda') :
+                                            h('div', { style: { display: 'grid', gap: '0.75rem' } },
+                                                auditoriasAprovadas.slice(-5).reverse().map(auditoria => 
+                                                    h('div', { 
+                                                        key: auditoria.id,
+                                                        style: { 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'center', 
+                                                            padding: '0.75rem', 
+                                                            background: '#eff6ff', 
+                                                            borderRadius: '0.5rem',
+                                                            border: '1px solid #bfdbfe'
+                                                        }
+                                                    },
+                                                        h('div', null,
+                                                            h('p', { style: { fontWeight: 'bold', color: '#1e40af' } }, 
+                                                                `${auditoria.tipo} - ${auditoria.setor}`
+                                                            ),
+                                                            h('p', { style: { fontSize: '0.75rem', color: '#3b82f6' } }, 
+                                                                new Date(auditoria.createdAt).toLocaleDateString('pt-BR')
+                                                            )
+                                                        ),
+                                                        h('span', { 
+                                                            style: { 
+                                                                background: '#3b82f6', 
+                                                                color: 'white', 
+                                                                padding: '0.25rem 0.5rem', 
+                                                                borderRadius: '0.25rem', 
+                                                                fontSize: '0.75rem', 
+                                                                fontWeight: 'bold'
+                                                            }
+                                                        }, '+25 pts')
+                                                    )
+                                                )
+                                            )
+                                    )
+                                ),
+
+                                // Informações adicionais
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginTop: '2rem' } },
+                                    h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' } }, 'ℹ️ Como funciona a pontuação'),
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' } },
+                                        h('div', { style: { padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' } },
+                                            h('h4', { style: { fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, '✅ Checklists (10 pontos cada)'),
+                                            h('ul', { style: { color: '#6b7280', lineHeight: '1.6', paddingLeft: '1rem' } },
+                                                h('li', null, 'Máximo de 50 pontos (5 checklists)'),
+                                                h('li', null, 'Staff e RP contam igualmente'),
+                                                h('li', null, 'Apenas checklists aprovados pontuam')
+                                            )
+                                        ),
+                                        h('div', { style: { padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' } },
+                                            h('h4', { style: { fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, '🔍 Auditorias (25 pontos cada)'),
+                                            h('ul', { style: { color: '#6b7280', lineHeight: '1.6', paddingLeft: '1rem' } },
+                                                h('li', null, 'Máximo de 100 pontos (4 auditorias)'),
+                                                h('li', null, 'Relatórios detalhados exigidos'),
+                                                h('li', null, 'Apenas auditorias aprovadas pontuam')
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    );
+                };
+
+                // Página de Auditoria
+                const AuditoriaPage = () => {
+                    const [auditorias, setAuditorias] = useStoredState('auditorias', []);
+                    const [currentAuditoria, setCurrentAuditoria] = useStoredState('currentAuditoria', null);
+                    const [formData, setFormData] = useStoredState('auditoriaFormData', {});
+
+                    const startNewAuditoria = (tipo) => {
+                        const newAuditoria = {
+                            id: Date.now(),
+                            tipo,
+                            autorId: currentUser.id,
+                            status: 'em_andamento',
+                            createdAt: new Date().toISOString()
+                        };
+                        setCurrentAuditoria(newAuditoria);
+                        setFormData({});
+                    };
+
+                    const saveAuditoria = () => {
+                        if (!formData.setor || !formData.relatorio || formData.relatorio.length < 100) {
+                            alert('⚠️ Preencha o setor e escreva um relatório com pelo menos 100 caracteres!');
+                            return;
+                        }
+
+                        const updatedAuditoria = {
+                            ...currentAuditoria,
+                            ...formData,
+                            updatedAt: new Date().toISOString(),
+                            status: 'aguardando_aprovacao'
+                        };
+
+                        if (auditorias.find(a => a.id === currentAuditoria.id)) {
+                            setAuditorias(auditorias.map(a => a.id === currentAuditoria.id ? updatedAuditoria : a));
+                        } else {
+                            setAuditorias([...auditorias, updatedAuditoria]);
+                        }
+
+                        setCurrentAuditoria(null);
+                        setFormData({});
+                        alert('✅ Auditoria enviada para aprovação!');
+                    };
+
+                    if (currentAuditoria) {
+                        return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                            // Header
+                            h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                                h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                    h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Auditoria'),
+                                    h('button', {
+                                        onClick: () => setCurrentAuditoria(null),
+                                        style: { background: '#6b7280', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                    }, 'Voltar')
+                                )
+                            ),
+                            
+                            h('div', { style: { padding: '2rem' } },
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                    h('h2', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem' } }, 
+                                        `Auditoria ${currentAuditoria.tipo === 'staff' ? 'Staff' : 'Roleplay'}`
+                                    ),
+                                    
+                                    // Dados básicos
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' } },
+                                        h('div', null,
+                                            h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Setor Auditado'),
+                                            h('input', {
+                                                type: 'text',
+                                                value: formData.setor || '',
+                                                onChange: (e) => setFormData({...formData, setor: e.target.value}),
+                                                placeholder: 'Nome do setor',
+                                                style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                            })
+                                        ),
+                                        h('div', null,
+                                            h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Turno'),
+                                            h('select', {
+                                                value: formData.turno || '',
+                                                onChange: (e) => setFormData({...formData, turno: e.target.value}),
+                                                style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                            },
+                                                h('option', { value: '' }, 'Selecione...'),
+                                                ['Manhã', 'Tarde', 'Noite'].map(turno => h('option', { key: turno, value: turno }, turno))
+                                            )
+                                        )
+                                    ),
+
+                                    // Campos específicos para Staff
+                                    currentAuditoria.tipo === 'staff' && h('div', { style: { marginBottom: '1.5rem' } },
+                                        h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' } }, 'Dados da Equipe'),
+                                        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' } },
+                                            h('div', null,
+                                                h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Membros Contratados'),
+                                                h('input', {
+                                                    type: 'number',
+                                                    value: formData.membrosContratados || '',
+                                                    onChange: (e) => setFormData({...formData, membrosContratados: e.target.value}),
+                                                    style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                                })
+                                            ),
+                                            h('div', null,
+                                                h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Membros Online (48h)'),
+                                                h('input', {
+                                                    type: 'number',
+                                                    value: formData.membrosOnline48h || '',
+                                                    onChange: (e) => setFormData({...formData, membrosOnline48h: e.target.value}),
+                                                    style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                                })
+                                            )
+                                        ),
+                                        h('div', { style: { marginBottom: '1rem' } },
+                                            h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Lista de Membros e IDs'),
+                                            h('textarea', {
+                                                value: formData.listaMembros || '',
+                                                onChange: (e) => setFormData({...formData, listaMembros: e.target.value}),
+                                                placeholder: 'Liste os membros e seus IDs...',
+                                                rows: 4,
+                                                style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', resize: 'vertical' }
+                                            })
+                                        ),
+                                        
+                                        // Perguntas de avaliação
+                                        h('div', { style: { display: 'grid', gap: '1rem' } },
+                                            [
+                                                { key: 'estruturaFuncional', label: 'Estrutura funcional?' },
+                                                { key: 'cumprimentoConduta', label: 'Cumprimento de conduta e ética?' },
+                                                { key: 'conflitosInternos', label: 'Conflitos internos?' },
+                                                { key: 'necessidadeReforco', label: 'Necessidade de reforço/contratação?' }
+                                            ].map(item => 
+                                                h('div', { key: item.key, style: { padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' } },
+                                                    h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, item.label),
+                                                    h('div', { style: { display: 'flex', gap: '1rem' } },
+                                                        ['Sim', 'Não'].map(opcao => 
+                                                            h('label', { key: opcao, style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
+                                                                h('input', {
+                                                                    type: 'radio',
+                                                                    name: item.key,
+                                                                    value: opcao.toLowerCase(),
+                                                                    checked: formData[item.key] === opcao.toLowerCase(),
+                                                                    onChange: (e) => setFormData({...formData, [item.key]: e.target.value})
+                                                                }),
+                                                                opcao
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),
+
+                                    // Relatório do auditor
+                                    h('div', { style: { marginBottom: '1.5rem' } },
+                                        h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 
+                                            'Relatório do Auditor (mínimo 100 caracteres)'
+                                        ),
+                                        h('textarea', {
+                                            value: formData.relatorio || '',
+                                            onChange: (e) => setFormData({...formData, relatorio: e.target.value}),
+                                            placeholder: 'Descreva detalhadamente os achados da auditoria...',
+                                            rows: 6,
+                                            style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', resize: 'vertical' }
+                                        }),
+                                        h('p', { style: { fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' } }, 
+                                            `${formData.relatorio?.length || 0} caracteres`
+                                        )
+                                    ),
+
+                                    h('div', { style: { textAlign: 'right' } },
+                                        h('button', {
+                                            onClick: saveAuditoria,
+                                            style: {
+                                                background: '#7c3aed',
+                                                color: 'white',
+                                                padding: '0.75rem 1.5rem',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                fontSize: '1rem',
+                                                fontWeight: 'bold'
+                                            }
+                                        }, 'Salvar Auditoria')
+                                    )
+                                )
+                            )
+                        );
+                    }
+
+                    return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                        // Header
+                        h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                            h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Auditoria'),
+                                h('button', {
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('login');
+                                    },
+                                    style: { background: '#ef4444', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                }, 'Sair')
+                            )
+                        ),
+                        
+                        h('div', { style: { display: 'flex' } },
+                            // Sidebar
+                            h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
+                                h('div', { style: { padding: '1rem' } },
+                                    ['dashboard', 'checklist', 'auditoria', 'painel', 'admin'].map(view => 
+                                        h('button', {
+                                            key: view,
+                                            onClick: () => setCurrentView(view),
+                                            style: {
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                padding: '0.75rem',
+                                                background: currentView === view ? '#8b5cf6' : 'transparent',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                marginBottom: '0.5rem'
+                                            }
+                                        }, 
+                                        view === 'dashboard' ? '📊 Dashboard' :
+                                        view === 'checklist' ? '✅ Checklist' :
+                                        view === 'auditoria' ? '🔍 Auditoria' :
+                                        view === 'painel' ? '🏙️ Painel da Cidade' : '⚙️ Administração'
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            // Conteúdo principal
+                            h('div', { style: { flex: 1, padding: '2rem' } },
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, 'Sistema de Auditoria'),
+                                
+                                // Cards para criar auditoria
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' } },
+                                    h('div', { 
+                                        style: { 
+                                            background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', 
+                                            color: 'white', 
+                                            padding: '2rem', 
+                                            borderRadius: '1rem', 
+                                            cursor: 'pointer'
+                                        },
+                                        onClick: () => startNewAuditoria('staff')
+                                    },
+                                        h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' } }, '👥 Auditoria Staff'),
+                                        h('p', { style: { opacity: 0.9 } }, 'Auditoria detalhada das equipes')
+                                    ),
+                                    h('div', { 
+                                        style: { 
+                                            background: 'linear-gradient(135deg, #4338ca, #3730a3)', 
+                                            color: 'white', 
+                                            padding: '2rem', 
+                                            borderRadius: '1rem', 
+                                            cursor: 'pointer'
+                                        },
+                                        onClick: () => startNewAuditoria('roleplay')
+                                    },
+                                        h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' } }, '🎭 Auditoria RP'),
+                                        h('p', { style: { opacity: 0.9 } }, 'Auditoria dos setores Roleplay')
+                                    )
+                                ),
+
+                                // Lista de auditorias
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                    h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem' } }, 'Minhas Auditorias'),
+                                    auditorias.filter(a => a.autorId === currentUser.id).length === 0 ? 
+                                        h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhuma auditoria criada ainda. Clique nos cards acima para começar!') :
+                                        h('div', { style: { display: 'grid', gap: '1rem' } },
+                                            auditorias.filter(a => a.autorId === currentUser.id).map(auditoria => 
+                                                h('div', { 
+                                                    key: auditoria.id,
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '1rem', 
+                                                        border: '1px solid #e5e7eb', 
+                                                        borderRadius: '0.5rem',
+                                                        background: '#f9fafb'
+                                                    }
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: 'bold', color: '#1f2937' } }, 
+                                                            `Auditoria ${auditoria.tipo} - ${auditoria.setor}`
+                                                        ),
+                                                        h('p', { style: { fontSize: '0.875rem', color: '#6b7280' } }, 
+                                                            `Criado em: ${new Date(auditoria.createdAt).toLocaleDateString('pt-BR')}`
+                                                        )
+                                                    ),
+                                                    h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                                                        h('span', { 
+                                                            style: { 
+                                                                padding: '0.25rem 0.75rem', 
+                                                                borderRadius: '9999px', 
+                                                                fontSize: '0.75rem', 
+                                                                fontWeight: 'bold',
+                                                                background: auditoria.status === 'aprovada' ? '#dcfce7' : 
+                                                                           auditoria.status === 'aguardando_aprovacao' ? '#fef3c7' : '#dbeafe',
+                                                                color: auditoria.status === 'aprovada' ? '#166534' : 
+                                                                       auditoria.status === 'aguardando_aprovacao' ? '#92400e' : '#1e40af'
+                                                            }
+                                                        }, auditoria.status.toUpperCase().replace('_', ' ')),
+                                                        auditoria.status === 'em_andamento' && h('button', {
+                                                            onClick: () => {
+                                                                setCurrentAuditoria(auditoria);
+                                                                setFormData(auditoria);
+                                                            },
+                                                            style: { 
+                                                                background: '#7c3aed', 
+                                                                color: 'white', 
+                                                                padding: '0.5rem 1rem', 
+                                                                border: 'none', 
+                                                                borderRadius: '0.25rem', 
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.875rem'
+                                                            }
+                                                        }, 'Continuar')
+                                                    )
+                                                )
+                                            )
+                                        )
+                                )
+                            )
+                        )
+                    );
+                };
 
                     return h('div', { 
                         style: { 
@@ -117,55 +1054,174 @@
                                 h('h1', { style: { color: 'white', fontSize: '2rem', marginBottom: '0.5rem' } }, 'MetaX'),
                                 h('p', { style: { color: '#e0e7ff', opacity: 0.8 } }, 'Sistema de Auditoria - Ilusion RP')
                             ),
-                            h('div', { style: { marginBottom: '1rem' } },
-                                h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'ID do Usuário'),
-                                h('input', {
-                                    type: 'text',
-                                    value: loginData.id,
-                                    onChange: (e) => setLoginData({...loginData, id: e.target.value}),
-                                    placeholder: 'Digite seu ID',
-                                    style: {
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '0.5rem',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        color: 'white'
-                                    }
-                                })
-                            ),
-                            h('div', { style: { marginBottom: '1.5rem' } },
-                                h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Senha'),
-                                h('input', {
-                                    type: 'password',
-                                    value: loginData.senha,
-                                    onChange: (e) => setLoginData({...loginData, senha: e.target.value}),
-                                    placeholder: 'Digite sua senha',
-                                    style: {
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '0.5rem',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        color: 'white'
-                                    }
-                                })
-                            ),
-                            h('button', {
-                                onClick: handleLogin,
-                                style: {
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: '#8b5cf6',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '0.5rem',
-                                    cursor: 'pointer',
-                                    fontSize: '1rem',
-                                    fontWeight: '600'
-                                }
-                            }, 'Entrar'),
 
+                            !isRegister ? 
+                                // Formulário de Login
+                                h('div', { style: { display: 'flex', flexDirection: 'column', gap: '1rem' } },
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'ID do Usuário'),
+                                        h('input', {
+                                            type: 'text',
+                                            value: loginData.id,
+                                            onChange: (e) => setLoginData({...loginData, id: e.target.value}),
+                                            placeholder: 'Digite seu ID',
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        })
+                                    ),
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Senha'),
+                                        h('input', {
+                                            type: 'password',
+                                            value: loginData.senha,
+                                            onChange: (e) => setLoginData({...loginData, senha: e.target.value}),
+                                            placeholder: 'Digite sua senha',
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        })
+                                    ),
+                                    h('button', {
+                                        onClick: handleLogin,
+                                        style: {
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            background: '#8b5cf6',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                        }
+                                    }, 'Entrar'),
+                                    h('button', {
+                                        onClick: () => setIsRegister(true),
+                                        style: {
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            background: 'transparent',
+                                            color: 'white',
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                        }
+                                    }, 'Criar Conta')
+                                ) :
+                                // Formulário de Cadastro
+                                h('div', { style: { display: 'flex', flexDirection: 'column', gap: '1rem' } },
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Nome Completo'),
+                                        h('input', {
+                                            type: 'text',
+                                            value: registerData.nome,
+                                            onChange: (e) => setRegisterData({...registerData, nome: e.target.value}),
+                                            placeholder: 'Seu nome completo',
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        })
+                                    ),
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'ID'),
+                                        h('input', {
+                                            type: 'text',
+                                            value: registerData.id,
+                                            onChange: (e) => setRegisterData({...registerData, id: e.target.value}),
+                                            placeholder: 'Escolha um ID único',
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        })
+                                    ),
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Senha'),
+                                        h('input', {
+                                            type: 'password',
+                                            value: registerData.senha,
+                                            onChange: (e) => setRegisterData({...registerData, senha: e.target.value}),
+                                            placeholder: 'Crie uma senha',
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        })
+                                    ),
+                                    h('div', null,
+                                        h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Cargo'),
+                                        h('select', {
+                                            value: registerData.cargo,
+                                            onChange: (e) => setRegisterData({...registerData, cargo: e.target.value}),
+                                            style: {
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                borderRadius: '0.5rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: 'white'
+                                            }
+                                        },
+                                            ['CEO', 'Diretor', 'Alta Cúpula', 'ADM Staff', 'RESP Comunidade', 'Mentoria', 'Staff Geral'].map(cargo => 
+                                                h('option', { key: cargo, value: cargo, style: { color: 'black' } }, cargo)
+                                            )
+                                        )
+                                    ),
+                                    h('button', {
+                                        onClick: handleRegister,
+                                        style: {
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            background: '#10b981',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                        }
+                                    }, 'Cadastrar'),
+                                    h('button', {
+                                        onClick: () => setIsRegister(false),
+                                        style: {
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            background: 'transparent',
+                                            color: 'white',
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                        }
+                                    }, 'Voltar ao Login')
+                                )
                         )
                     );
                 };
@@ -377,13 +1433,186 @@
                     );
                 };
 
-                // Página de Funcionalidade Genérica
-                const FeaturePage = ({ title, description }) => {
+                // Página de Checklist
+                const ChecklistPage = () => {
+                    const [checklists, setChecklists] = useStoredState('checklists', []);
+                    const [currentChecklist, setCurrentChecklist] = useStoredState('currentChecklist', null);
+                    const [formData, setFormData] = useStoredState('checklistFormData', {});
+
+                    const startNewChecklist = (tipo) => {
+                        const newChecklist = {
+                            id: Date.now(),
+                            tipo,
+                            autorId: currentUser.id,
+                            status: 'em_andamento',
+                            createdAt: new Date().toISOString(),
+                            confirmacoesPainel: { manha: '', tarde: '', noite: '' }
+                        };
+                        setCurrentChecklist(newChecklist);
+                        setFormData({});
+                    };
+
+                    const saveChecklist = () => {
+                        const updatedChecklist = {
+                            ...currentChecklist,
+                            ...formData,
+                            updatedAt: new Date().toISOString()
+                        };
+
+                        const confirmacoesCompletas = Object.values(updatedChecklist.confirmacoesPainel).every(val => val !== '');
+                        
+                        if (confirmacoesCompletas && updatedChecklist.status === 'em_andamento') {
+                            updatedChecklist.status = 'aguardando_aprovacao';
+                            alert('✅ Checklist enviado para aprovação!');
+                        } else {
+                            alert('💾 Checklist salvo como rascunho!');
+                        }
+
+                        if (checklists.find(c => c.id === currentChecklist.id)) {
+                            setChecklists(checklists.map(c => c.id === currentChecklist.id ? updatedChecklist : c));
+                        } else {
+                            setChecklists([...checklists, updatedChecklist]);
+                        }
+
+                        setCurrentChecklist(null);
+                        setFormData({});
+                    };
+
+                    if (currentChecklist) {
+                        return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                            // Header
+                            h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                                h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                    h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Checklist'),
+                                    h('button', {
+                                        onClick: () => setCurrentChecklist(null),
+                                        style: { background: '#6b7280', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                    }, 'Voltar')
+                                )
+                            ),
+                            
+                            h('div', { style: { padding: '2rem' } },
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                    h('h2', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem' } }, 
+                                        currentChecklist.tipo === 'staff' ? 'Checklist Staff (Discord)' : 'Checklist Roleplay (RP)'
+                                    ),
+                                    
+                                    h('div', { style: { marginBottom: '1.5rem' } },
+                                        h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 
+                                            currentChecklist.tipo === 'staff' ? 'Equipe' : 'Setor'
+                                        ),
+                                        h('select', {
+                                            value: formData.equipe || formData.setor || '',
+                                            onChange: (e) => setFormData({
+                                                ...formData, 
+                                                [currentChecklist.tipo === 'staff' ? 'equipe' : 'setor']: e.target.value
+                                            }),
+                                            style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                        },
+                                            h('option', { value: '' }, 'Selecione...'),
+                                            (currentChecklist.tipo === 'staff' ? 
+                                                ['Alta Cúpula', 'ADM Staff', 'RESP Comunidade', 'Mentoria', 'Equipe Legal', 'Equipe Org', 'Social Media (SM)', 'Tolerância Zero'] :
+                                                ['Jurídico / Prefeitura', 'Igreja', 'Jornal', 'Hospital', 'Bombeiros', 'Mecânica', 'Empresários', 'Polícia']
+                                            ).map(item => h('option', { key: item, value: item }, item))
+                                        )
+                                    ),
+
+                                    // Campos específicos para Staff
+                                    currentChecklist.tipo === 'staff' && h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' } },
+                                        ['totalPessoas', 'pessoasAtivas', 'pessoasDiscord', 'pessoasJogo', 'metasBatidas'].map(field => 
+                                            h('div', { key: field },
+                                                h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 
+                                                    field === 'totalPessoas' ? 'Total de pessoas na equipe' :
+                                                    field === 'pessoasAtivas' ? 'Pessoas ativas' :
+                                                    field === 'pessoasDiscord' ? 'Pessoas no Discord' :
+                                                    field === 'pessoasJogo' ? 'Pessoas no jogo atendendo' : 'Metas batidas até hoje'
+                                                ),
+                                                h('input', {
+                                                    type: 'number',
+                                                    value: formData[field] || '',
+                                                    onChange: (e) => setFormData({...formData, [field]: e.target.value}),
+                                                    style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                                })
+                                            )
+                                        ),
+                                        h('div', null,
+                                            h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 'Desempenho geral'),
+                                            h('select', {
+                                                value: formData.desempenho || '',
+                                                onChange: (e) => setFormData({...formData, desempenho: e.target.value}),
+                                                style: { width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }
+                                            },
+                                                h('option', { value: '' }, 'Selecione...'),
+                                                ['Ruim', 'Regular', 'Bom', 'Excelente'].map(opt => h('option', { key: opt, value: opt.toLowerCase() }, opt))
+                                            )
+                                        )
+                                    ),
+
+                                    // Confirmações de painel (obrigatório)
+                                    h('div', { style: { background: '#dbeafe', border: '2px solid #3b82f6', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '1.5rem' } },
+                                        h('h3', { style: { fontSize: '1.125rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' } }, 'Confirmações do Painel Online'),
+                                        h('p', { style: { color: '#1e40af', marginBottom: '1rem' } }, '⚠️ Obrigatório: Preencha os 3 turnos para enviar para aprovação'),
+                                        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' } },
+                                            ['manha', 'tarde', 'noite'].map(turno => 
+                                                h('div', { key: turno },
+                                                    h('label', { style: { display: 'block', fontWeight: 'bold', color: '#374151', marginBottom: '0.5rem' } }, 
+                                                        `${turno.charAt(0).toUpperCase() + turno.slice(1)} - Pessoas Online`
+                                                    ),
+                                                    h('input', {
+                                                        type: 'number',
+                                                        min: '0',
+                                                        value: currentChecklist.confirmacoesPainel[turno] || '',
+                                                        onChange: (e) => {
+                                                            const updatedConfirmacoes = {
+                                                                ...currentChecklist.confirmacoesPainel,
+                                                                [turno]: e.target.value
+                                                            };
+                                                            setCurrentChecklist({
+                                                                ...currentChecklist,
+                                                                confirmacoesPainel: updatedConfirmacoes
+                                                            });
+                                                        },
+                                                        style: { 
+                                                            width: '100%', 
+                                                            padding: '0.75rem', 
+                                                            border: currentChecklist.confirmacoesPainel[turno] ? '1px solid #10b981' : '1px solid #d1d5db', 
+                                                            borderRadius: '0.5rem',
+                                                            background: currentChecklist.confirmacoesPainel[turno] ? '#f0fdf4' : 'white'
+                                                        }
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    ),
+
+                                    h('div', { style: { textAlign: 'right' } },
+                                        h('button', {
+                                            onClick: saveChecklist,
+                                            style: {
+                                                background: '#10b981',
+                                                color: 'white',
+                                                padding: '0.75rem 1.5rem',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                fontSize: '1rem',
+                                                fontWeight: 'bold'
+                                            }
+                                        }, 
+                                        Object.values(currentChecklist.confirmacoesPainel).every(val => val !== '') ? 
+                                            'Enviar para Aprovação' : 'Salvar Rascunho'
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    }
+
                     return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
-                        // Header (igual ao Dashboard)
+                        // Header
                         h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
                             h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Ilusion RP'),
+                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Checklist'),
                                 h('button', {
                                     onClick: () => {
                                         setCurrentUser(null);
@@ -395,7 +1624,7 @@
                         ),
                         
                         h('div', { style: { display: 'flex' } },
-                            // Sidebar (igual ao Dashboard)
+                            // Sidebar
                             h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
                                 h('div', { style: { padding: '1rem' } },
                                     ['dashboard', 'checklist', 'auditoria', 'painel', 'admin'].map(view => 
@@ -425,12 +1654,102 @@
                                 )
                             ),
                             
-                            // Conteúdo
+                            // Conteúdo principal
                             h('div', { style: { flex: 1, padding: '2rem' } },
-                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, title),
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, 'Sistema de Checklist'),
+                                
+                                // Cards para criar checklist
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' } },
+                                    h('div', { 
+                                        style: { 
+                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', 
+                                            color: 'white', 
+                                            padding: '2rem', 
+                                            borderRadius: '1rem', 
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s',
+                                            ':hover': { transform: 'scale(1.05)' }
+                                        },
+                                        onClick: () => startNewChecklist('staff')
+                                    },
+                                        h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' } }, '👥 Checklist Staff'),
+                                        h('p', { style: { opacity: 0.9 } }, 'Auditoria das equipes do Discord')
+                                    ),
+                                    h('div', { 
+                                        style: { 
+                                            background: 'linear-gradient(135deg, #10b981, #059669)', 
+                                            color: 'white', 
+                                            padding: '2rem', 
+                                            borderRadius: '1rem', 
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s'
+                                        },
+                                        onClick: () => startNewChecklist('rp')
+                                    },
+                                        h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' } }, '🎭 Checklist RP'),
+                                        h('p', { style: { opacity: 0.9 } }, 'Auditoria dos setores Roleplay')
+                                    )
+                                ),
+
+                                // Lista de checklists
                                 h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
-                                    h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' } }, description),
-                                    h('p', { style: { color: '#6b7280' } }, 'Esta funcionalidade estará disponível em breve com todas as funcionalidades completas.')
+                                    h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem' } }, 'Meus Checklists'),
+                                    checklists.filter(c => c.autorId === currentUser.id).length === 0 ? 
+                                        h('p', { style: { color: '#6b7280', textAlign: 'center', padding: '2rem' } }, 'Nenhum checklist criado ainda. Clique nos cards acima para começar!') :
+                                        h('div', { style: { display: 'grid', gap: '1rem' } },
+                                            checklists.filter(c => c.autorId === currentUser.id).map(checklist => 
+                                                h('div', { 
+                                                    key: checklist.id,
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '1rem', 
+                                                        border: '1px solid #e5e7eb', 
+                                                        borderRadius: '0.5rem',
+                                                        background: '#f9fafb'
+                                                    }
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: 'bold', color: '#1f2937' } }, 
+                                                            `${checklist.tipo === 'staff' ? 'Staff' : 'RP'} - ${checklist.equipe || checklist.setor}`
+                                                        ),
+                                                        h('p', { style: { fontSize: '0.875rem', color: '#6b7280' } }, 
+                                                            `Criado em: ${new Date(checklist.createdAt).toLocaleDateString('pt-BR')}`
+                                                        )
+                                                    ),
+                                                    h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                                                        h('span', { 
+                                                            style: { 
+                                                                padding: '0.25rem 0.75rem', 
+                                                                borderRadius: '9999px', 
+                                                                fontSize: '0.75rem', 
+                                                                fontWeight: 'bold',
+                                                                background: checklist.status === 'aprovado' ? '#dcfce7' : 
+                                                                           checklist.status === 'aguardando_aprovacao' ? '#fef3c7' : '#dbeafe',
+                                                                color: checklist.status === 'aprovado' ? '#166534' : 
+                                                                       checklist.status === 'aguardando_aprovacao' ? '#92400e' : '#1e40af'
+                                                            }
+                                                        }, checklist.status.toUpperCase().replace('_', ' ')),
+                                                        checklist.status === 'em_andamento' && h('button', {
+                                                            onClick: () => {
+                                                                setCurrentChecklist(checklist);
+                                                                setFormData(checklist);
+                                                            },
+                                                            style: { 
+                                                                background: '#3b82f6', 
+                                                                color: 'white', 
+                                                                padding: '0.5rem 1rem', 
+                                                                border: 'none', 
+                                                                borderRadius: '0.25rem', 
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.875rem'
+                                                            }
+                                                        }, 'Continuar')
+                                                    )
+                                                )
+                                            )
+                                        )
                                 )
                             )
                         )
@@ -448,13 +1767,13 @@
                     case 'dashboard':
                         return h(Dashboard);
                     case 'checklist':
-                        return h(FeaturePage, { title: 'Checklist', description: 'Sistema de Checklist Staff e RP' });
+                        return h(ChecklistPage);
                     case 'auditoria':
-                        return h(FeaturePage, { title: 'Auditoria', description: 'Sistema de Auditoria Completo' });
+                        return h(AuditoriaPage);
                     case 'painel':
-                        return h(FeaturePage, { title: 'Painel da Cidade', description: 'Monitoramento da Pontuação da Cidade' });
+                        return h(PainelCidadePage);
                     case 'admin':
-                        return h(FeaturePage, { title: 'Administração', description: 'Gestão de Usuários e Aprovações' });
+                        return h(AdminPage);
                     default:
                         return h(Dashboard);
                 }
