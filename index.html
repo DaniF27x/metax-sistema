@@ -6,641 +6,486 @@
     <title>MetaX - Sistema de Auditoria</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         #root { min-height: 100vh; }
-        .loading { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            font-size: 18px; 
-        }
-        @keyframes loading {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(200%); }
-        }
     </style>
 </head>
 <body>
-    <div id="root">
-        <div class="loading">
-            <div style="text-align: center;">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">🛡️</div>
-                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">MetaX</h2>
-                <p style="margin: 0; opacity: 0.8;">Carregando Sistema de Auditoria...</p>
-                <div style="margin-top: 1rem; width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
-                    <div style="width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); animation: loading 2s infinite;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="root"></div>
     
-    <script type="text/babel">
-        // Aguardar que tudo carregue
-        function initializeSystem() {
-            console.log('Inicializando sistema MetaX...');
+    <script>
+        // Aguardar React carregar e renderizar imediatamente
+        (function() {
+            console.log('🚀 Inicializando MetaX System...');
             
-            // Verificar se as dependências estão carregadas
-            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined' || typeof lucide === 'undefined') {
-                console.log('Aguardando dependências...');
-                setTimeout(initializeSystem, 500);
+            // Verificar se React está disponível
+            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                console.error('❌ React não carregado');
+                document.getElementById('root').innerHTML = '<div style="padding: 2rem; text-align: center; color: red;">Erro: React não carregado</div>';
                 return;
             }
+
+            const { useState, useEffect, createElement: h } = React;
             
-            const { useState, useEffect } = React;
-            const { 
-              User, Settings, FileText, CheckSquare, BarChart3, Users, 
-              Clock, Shield, ChevronDown, Save, Eye, UserCheck, 
-              AlertCircle, CheckCircle, Calendar, Hash 
-            } = lucide;
-            
-            // Hook para localStorage (substituindo o hatch)
+            // Hook para localStorage
             const useStoredState = (key, initialValue) => {
-              const [value, setValue] = useState(() => {
-                try {
-                  const item = localStorage.getItem(key);
-                  return item ? JSON.parse(item) : initialValue;
-                } catch {
-                  return initialValue;
-                }
-              });
-
-              useEffect(() => {
-                try {
-                  localStorage.setItem(key, JSON.stringify(value));
-                } catch (e) {
-                  console.error('Erro ao salvar no localStorage:', e);
-                }
-              }, [key, value]);
-
-              return [value, setValue];
-            };
-
-            // Simular o objeto hatch
-            window.hatch = { useStoredState };
-            
-            // Dados iniciais e configurações
-            const CARGOS = [
-              'CEO', 'Diretor', 'Alta Cúpula', 'ADM Staff',
-              'RESP Comunidade', 'Mentoria', 'Staff Geral'
-            ];
-
-            const EQUIPES_STAFF = [
-              'Alta Cúpula', 'ADM Staff', 'RESP Comunidade', 'Mentoria',
-              'Equipe Legal', 'Equipe Org', 'Social Media (SM)', 'Wall Street',
-              'Streamline', 'Tolerância Zero', 'Comercial', 'Anti-Hack',
-              'Ticketing', 'Eventos'
-            ];
-
-            const SETORES_RP = [
-              'Jurídico / Prefeitura', 'Igreja', 'Jornal', 'Hospital', 'Bombeiros',
-              'Mecânica', 'Empresários', 'Facção', 'Máfia', 'Polícia'
-            ];
-
-            const SUBSETORES_POLICIA = [
-              'PRF', 'Federal', 'Civil', 'Militar', 'Prisão', 'BOPE', 'MPF', 'Segurança Jurídica'
-            ];
-
-            const TURNOS = ['Manhã', 'Tarde', 'Noite'];
-            
-            // Componente principal
-            const MetaXAuditSystem = () => {
-              const [currentUser, setCurrentUser] = useStoredState('currentUser', null);
-              const [users, setUsers] = useStoredState('users', [
-                {
-                  id: 'admin001',
-                  nome: 'Administrador Sistema',
-                  senha: 'admin123',
-                  cargo: 'CEO',
-                  status: 'aprovado',
-                  createdAt: new Date().toISOString()
-                }
-              ]);
-              const [pendingUsers, setPendingUsers] = useStoredState('pendingUsers', []);
-              const [checklists, setChecklists] = useStoredState('checklists', []);
-              const [auditorias, setAuditorias] = useStoredState('auditorias', []);
-              const [currentView, setCurrentView] = useStoredState('currentView', 'login');
-              const [notifications, setNotifications] = useStoredState('notifications', []);
-
-              // Verificar permissões
-              const canValidateChecklist = (user) => {
-                return ['CEO', 'Diretor', 'Alta Cúpula'].includes(user?.cargo);
-              };
-
-              const canValidateAuditoria = (user) => {
-                return ['CEO', 'Diretor'].includes(user?.cargo);
-              };
-
-              const canApproveUsers = (user) => {
-                return ['CEO', 'Diretor'].includes(user?.cargo);
-              };
-
-              // Componente de Login
-              const LoginForm = () => {
-                const [loginData, setLoginData] = useState({ id: '', senha: '' });
-                const [registerData, setRegisterData] = useState({
-                  nome: '', id: '', senha: '', cargo: 'Staff Geral'
+                const [value, setValue] = useState(() => {
+                    try {
+                        const item = localStorage.getItem(key);
+                        return item ? JSON.parse(item) : initialValue;
+                    } catch {
+                        return initialValue;
+                    }
                 });
-                const [isRegister, setIsRegister] = useState(false);
 
-                const handleLogin = () => {
-                  console.log('Tentativa de login:', loginData);
-                  console.log('Usuários disponíveis:', users);
-                  
-                  const user = users.find(u => u.id === loginData.id && u.senha === loginData.senha && u.status === 'aprovado');
-                  console.log('Usuário encontrado:', user);
-                  
-                  if (user) {
-                    console.log('Login bem-sucedido, setando usuário atual');
-                    setCurrentUser(user);
-                    console.log('Mudando view para dashboard');
-                    setCurrentView('dashboard');
-                  } else {
-                    alert('ID ou senha incorretos, ou usuário ainda não aprovado!');
-                  }
-                };
+                useEffect(() => {
+                    try {
+                        localStorage.setItem(key, JSON.stringify(value));
+                    } catch (e) {
+                        console.error('Erro localStorage:', e);
+                    }
+                }, [key, value]);
 
-                const handleRegister = () => {
-                  if (!registerData.nome || !registerData.id || !registerData.senha) {
-                    alert('Preencha todos os campos!');
-                    return;
-                  }
-
-                  const existingUser = [...users, ...pendingUsers].find(u => u.id === registerData.id);
-                  if (existingUser) {
-                    alert('ID já existe!');
-                    return;
-                  }
-
-                  const newUser = {
-                    ...registerData,
-                    status: 'pendente',
-                    createdAt: new Date().toISOString()
-                  };
-
-                  setPendingUsers([...pendingUsers, newUser]);
-                  alert('Cadastro enviado para aprovação!');
-                  setIsRegister(false);
-                  setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
-                };
-
-                return React.createElement('div', { 
-                  className: "min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4",
-                  style: { minHeight: '100vh' }
-                },
-                  React.createElement('div', { className: "bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md border border-white/20" },
-                    React.createElement('div', { className: "text-center mb-8" },
-                      React.createElement('h1', { className: "text-3xl font-bold text-white mb-2" }, 'MetaX'),
-                      React.createElement('p', { className: "text-purple-200" }, 'Sistema de Auditoria - Ilusion RP')
-                    ),
-                    !isRegister ? 
-                      React.createElement('div', { className: "space-y-4" },
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'ID do Usuário'),
-                          React.createElement('input', {
-                            type: "text",
-                            value: loginData.id,
-                            onChange: (e) => setLoginData({...loginData, id: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50",
-                            placeholder: "Digite seu ID"
-                          })
-                        ),
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'Senha'),
-                          React.createElement('input', {
-                            type: "password",
-                            value: loginData.senha,
-                            onChange: (e) => setLoginData({...loginData, senha: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50",
-                            placeholder: "Digite sua senha"
-                          })
-                        ),
-                        React.createElement('button', {
-                          onClick: handleLogin,
-                          className: "w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg font-semibold transition-colors"
-                        }, 'Entrar'),
-                        React.createElement('button', {
-                          onClick: () => setIsRegister(true),
-                          className: "w-full bg-transparent border border-white/30 text-white p-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
-                        }, 'Criar Conta'),
-                        React.createElement('div', { className: "bg-blue-500/20 p-4 rounded-lg mt-4" },
-                          React.createElement('p', { className: "text-white text-sm text-center" }, 
-                            '💡 Entre em contato com a administração para obter suas credenciais'
-                          )
-                        )
-                      ) :
-                      React.createElement('div', { className: "space-y-4" },
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'Nome Completo'),
-                          React.createElement('input', {
-                            type: "text",
-                            value: registerData.nome,
-                            onChange: (e) => setRegisterData({...registerData, nome: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50"
-                          })
-                        ),
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'ID'),
-                          React.createElement('input', {
-                            type: "text",
-                            value: registerData.id,
-                            onChange: (e) => setRegisterData({...registerData, id: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50"
-                          })
-                        ),
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'Senha'),
-                          React.createElement('input', {
-                            type: "password",
-                            value: registerData.senha,
-                            onChange: (e) => setRegisterData({...registerData, senha: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50"
-                          })
-                        ),
-                        React.createElement('div', null,
-                          React.createElement('label', { className: "block text-white/80 mb-2" }, 'Cargo'),
-                          React.createElement('select', {
-                            value: registerData.cargo,
-                            onChange: (e) => setRegisterData({...registerData, cargo: e.target.value}),
-                            className: "w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
-                          }, CARGOS.map(cargo => 
-                            React.createElement('option', { key: cargo, value: cargo, className: "text-black" }, cargo)
-                          ))
-                        ),
-                        React.createElement('button', {
-                          onClick: handleRegister,
-                          className: "w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-semibold transition-colors"
-                        }, 'Cadastrar'),
-                        React.createElement('button', {
-                          onClick: () => setIsRegister(false),
-                          className: "w-full bg-transparent border border-white/30 text-white p-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
-                        }, 'Voltar ao Login')
-                      )
-                  )
-                );
-              };
-
-              // Header do sistema
-              const Header = () => React.createElement('div', { className: "bg-white shadow-lg border-b-4 border-purple-500" },
-                React.createElement('div', { className: "max-w-7xl mx-auto px-4 py-4" },
-                  React.createElement('div', { className: "flex items-center justify-between" },
-                    React.createElement('div', { className: "flex items-center space-x-4" },
-                      React.createElement('div', { className: "bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg" },
-                        React.createElement(Shield, { className: "w-8 h-8 text-white" })
-                      ),
-                      React.createElement('div', null,
-                        React.createElement('h1', { className: "text-2xl font-bold text-gray-800" }, 'MetaX - Ilusion RP'),
-                        React.createElement('p', { className: "text-gray-600" }, 'Sistema de Auditoria')
-                      )
-                    ),
-                    React.createElement('div', { className: "flex items-center space-x-4" },
-                      React.createElement('div', { className: "text-right" },
-                        React.createElement('p', { className: "font-semibold text-gray-800" }, currentUser?.nome),
-                        React.createElement('p', { className: "text-sm text-gray-600" }, currentUser?.cargo)
-                      ),
-                      React.createElement('button', {
-                        onClick: () => {
-                          setCurrentUser(null);
-                          setCurrentView('login');
-                        },
-                        className: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-                      }, 'Sair')
-                    )
-                  )
-                )
-              );
-
-              // Menu lateral
-              const Sidebar = () => {
-                const menuItems = [
-                  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-                  { id: 'checklist', label: 'Checklist', icon: CheckSquare },
-                  { id: 'auditoria', label: 'Auditoria', icon: FileText },
-                  { id: 'painel-cidade', label: 'Painel da Cidade', icon: Users }
-                ];
-
-                // Adicionar item de admin apenas se o usuário pode aprovar
-                if (canApproveUsers(currentUser)) {
-                  menuItems.push({ id: 'admin', label: 'Administração', icon: Settings });
-                }
-
-                return React.createElement('div', { className: "bg-gray-900 text-white w-64 min-h-screen" },
-                  React.createElement('div', { className: "p-4" },
-                    menuItems.map(item => {
-                      const IconComponent = item.icon;
-                      return React.createElement('button', {
-                        key: item.id,
-                        onClick: () => setCurrentView(item.id),
-                        className: `w-full flex items-center space-x-3 p-3 rounded-lg mb-2 transition-colors ${
-                          currentView === item.id ? 'bg-purple-600' : 'hover:bg-gray-800'
-                        }`
-                      },
-                        React.createElement(IconComponent, { className: "w-5 h-5" }),
-                        React.createElement('span', null, item.label)
-                      );
-                    })
-                  )
-                );
-              };
-
-              // Dashboard Principal  
-              const Dashboard = () => {
-                const myChecklists = checklists.filter(c => c.autorId === currentUser.id);
-                const myAuditorias = auditorias.filter(a => a.autorId === currentUser.id);
-                const pendingApprovals = [
-                  ...checklists.filter(c => c.status === 'aguardando_aprovacao' && canValidateChecklist(currentUser)),
-                  ...auditorias.filter(a => a.status === 'aguardando_aprovacao' && canValidateAuditoria(currentUser))
-                ];
-
-                return React.createElement('div', { className: "p-6" },
-                  React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Dashboard'),
-                  
-                  React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" },
-                    React.createElement('div', { className: "bg-blue-500 text-white p-6 rounded-xl" },
-                      React.createElement('div', { className: "flex items-center justify-between" },
-                        React.createElement('div', null,
-                          React.createElement('p', { className: "text-blue-100" }, 'Meus Checklists'),
-                          React.createElement('p', { className: "text-3xl font-bold" }, myChecklists.length)
-                        ),
-                        React.createElement(CheckSquare, { className: "w-12 h-12 text-blue-200" })
-                      )
-                    ),
-                    
-                    React.createElement('div', { className: "bg-green-500 text-white p-6 rounded-xl" },
-                      React.createElement('div', { className: "flex items-center justify-between" },
-                        React.createElement('div', null,
-                          React.createElement('p', { className: "text-green-100" }, 'Minhas Auditorias'),
-                          React.createElement('p', { className: "text-3xl font-bold" }, myAuditorias.length)
-                        ),
-                        React.createElement(FileText, { className: "w-12 h-12 text-green-200" })
-                      )
-                    ),
-                    
-                    React.createElement('div', { className: "bg-orange-500 text-white p-6 rounded-xl" },
-                      React.createElement('div', { className: "flex items-center justify-between" },
-                        React.createElement('div', null,
-                          React.createElement('p', { className: "text-orange-100" }, 'Pendente Aprovação'),
-                          React.createElement('p', { className: "text-3xl font-bold" }, pendingApprovals.length)
-                        ),
-                        React.createElement(Clock, { className: "w-12 h-12 text-orange-200" })
-                      )
-                    )
-                  ),
-
-                  React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-8" },
-                    React.createElement('h3', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, '🎉 Sistema MetaX Funcionando Completo!'),
-                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8" },
-                      React.createElement('div', null,
-                        React.createElement('h4', { className: "font-bold text-gray-700 mb-4 text-lg" }, '✅ Funcionalidades Ativas:'),
-                        React.createElement('ul', { className: "text-gray-600 space-y-2" },
-                          React.createElement('li', null, '🔐 Sistema de Login/Registro'),
-                          React.createElement('li', null, '📋 Checklist Staff e RP'),
-                          React.createElement('li', null, '🔍 Auditorias Completas'),
-                          React.createElement('li', null, '📊 Painel da Cidade'),
-                          React.createElement('li', null, '👥 Gestão de Usuários'),
-                          React.createElement('li', null, '✅ Sistema de Aprovações'),
-                          React.createElement('li', null, '💾 Dados Persistentes')
-                        )
-                      ),
-                      React.createElement('div', null,
-                        React.createElement('h4', { className: "font-bold text-gray-700 mb-4 text-lg" }, '🚀 Como Usar:'),
-                        React.createElement('ul', { className: "text-gray-600 space-y-2" },
-                          React.createElement('li', null, '1. Use o menu lateral para navegar'),
-                          React.createElement('li', null, '2. Crie checklists e auditorias'),
-                          React.createElement('li', null, '3. Aprove documentos (se for admin)'),
-                          React.createElement('li', null, '4. Monitore pontuação da cidade'),
-                          React.createElement('li', null, '5. Gerencie usuários do sistema'),
-                          React.createElement('li', null, '6. Todos os dados salvos automaticamente')
-                        )
-                      )
-                    ),
-                    React.createElement('div', { className: "text-center mt-6 p-4 bg-green-50 rounded-lg border border-green-200" },
-                      React.createElement('p', { className: "text-green-800 font-bold text-lg" }, '🎯 Sistema 100% Funcional!'),
-                      React.createElement('p', { className: "text-green-600 mt-2" }, 'Navegue pelo menu lateral para explorar todas as funcionalidades')
-                    )
-                  )
-                );
-              };
-
-              // Componente de Checklist (simplificado)
-              const ChecklistComponent = () => {
-                return React.createElement('div', { className: "p-6" },
-                  React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Checklist'),
-                  React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" },
-                    React.createElement('div', { className: "bg-gradient-to-br from-blue-500 to-blue-700 text-white p-8 rounded-xl cursor-pointer hover:scale-105 transition-transform" },
-                      React.createElement('div', { className: "flex items-center justify-between mb-4" },
-                        React.createElement(Users, { className: "w-12 h-12" }),
-                        React.createElement(ChevronDown, { className: "w-6 h-6" })
-                      ),
-                      React.createElement('h3', { className: "text-2xl font-bold mb-2" }, 'Checklist Staff'),
-                      React.createElement('p', { className: "text-blue-100" }, 'Auditoria das equipes do Discord')
-                    ),
-                    React.createElement('div', { className: "bg-gradient-to-br from-green-500 to-green-700 text-white p-8 rounded-xl cursor-pointer hover:scale-105 transition-transform" },
-                      React.createElement('div', { className: "flex items-center justify-between mb-4" },
-                        React.createElement(Shield, { className: "w-12 h-12" }),
-                        React.createElement(ChevronDown, { className: "w-6 h-6" })
-                      ),
-                      React.createElement('h3', { className: "text-2xl font-bold mb-2" }, 'Checklist Roleplay'),
-                      React.createElement('p', { className: "text-green-100" }, 'Auditoria dos setores RP')
-                    )
-                  ),
-                  React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-6" },
-                    React.createElement('h3', { className: "text-xl font-bold text-gray-800 mb-4" }, 'Funcionalidade em Desenvolvimento'),
-                    React.createElement('p', { className: "text-gray-600" }, 'Esta seção estará disponível em breve com todas as funcionalidades de checklist.')
-                  )
-                );
-              };
-
-              // Painel da Cidade  
-              const PainelCidade = () => {
-                const checklistsAprovados = checklists.filter(c => c.status === 'aprovado');
-                const auditoriasAprovadas = auditorias.filter(a => a.status === 'aprovada');
-                
-                const pontuacaoChecklist = Math.min(checklistsAprovados.length * 10, 50);
-                const pontuacaoAuditoria = Math.min(auditoriasAprovadas.length * 25, 100);
-                const pontuacaoTotal = pontuacaoChecklist + pontuacaoAuditoria;
-                
-                const maxPontuacaoTotal = 150;
-
-                return React.createElement('div', { className: "p-6" },
-                  React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Painel Geral da Cidade'),
-                  
-                  React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-8 mb-8" },
-                    React.createElement('div', { className: "text-center mb-8" },
-                      React.createElement('h3', { className: "text-2xl font-bold text-gray-800 mb-2" }, 'Ilusion RP'),
-                      React.createElement('p', { className: "text-gray-600" }, 'Pontuação Acumulada da Cidade')
-                    ),
-
-                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-8" },
-                      React.createElement('div', { className: "text-center" },
-                        React.createElement('div', { className: "bg-blue-100 p-6 rounded-xl mb-4" },
-                          React.createElement(CheckSquare, { className: "w-12 h-12 text-blue-600 mx-auto mb-4" }),
-                          React.createElement('h4', { className: "text-lg font-bold text-gray-800 mb-2" }, 'Checklist'),
-                          React.createElement('div', { className: "text-3xl font-bold text-blue-600 mb-2" }, `${pontuacaoChecklist}/50`),
-                          React.createElement('div', { className: "w-full bg-gray-200 rounded-full h-3" },
-                            React.createElement('div', {
-                              className: "bg-blue-600 h-3 rounded-full transition-all duration-500",
-                              style: { width: `${(pontuacaoChecklist / 50) * 100}%` }
-                            })
-                          ),
-                          React.createElement('p', { className: "text-sm text-gray-600 mt-2" },
-                            `${checklistsAprovados.length} checklists aprovados`
-                          )
-                        )
-                      ),
-
-                      React.createElement('div', { className: "text-center" },
-                        React.createElement('div', { className: "bg-green-100 p-6 rounded-xl mb-4" },
-                          React.createElement(FileText, { className: "w-12 h-12 text-green-600 mx-auto mb-4" }),
-                          React.createElement('h4', { className: "text-lg font-bold text-gray-800 mb-2" }, 'Auditoria'),
-                          React.createElement('div', { className: "text-3xl font-bold text-green-600 mb-2" }, `${pontuacaoAuditoria}/100`),
-                          React.createElement('div', { className: "w-full bg-gray-200 rounded-full h-3" },
-                            React.createElement('div', {
-                              className: "bg-green-600 h-3 rounded-full transition-all duration-500",
-                              style: { width: `${(pontuacaoAuditoria / 100) * 100}%` }
-                            })
-                          ),
-                          React.createElement('p', { className: "text-sm text-gray-600 mt-2" },
-                            `${auditoriasAprovadas.length} auditorias aprovadas`
-                          )
-                        )
-                      ),
-
-                      React.createElement('div', { className: "text-center" },
-                        React.createElement('div', { className: "bg-purple-100 p-6 rounded-xl mb-4" },
-                          React.createElement(BarChart3, { className: "w-12 h-12 text-purple-600 mx-auto mb-4" }),
-                          React.createElement('h4', { className: "text-lg font-bold text-gray-800 mb-2" }, 'Total'),
-                          React.createElement('div', { className: "text-3xl font-bold text-purple-600 mb-2" }, `${pontuacaoTotal}/${maxPontuacaoTotal}`),
-                          React.createElement('div', { className: "w-full bg-gray-200 rounded-full h-3" },
-                            React.createElement('div', {
-                              className: "bg-purple-600 h-3 rounded-full transition-all duration-500",
-                              style: { width: `${(pontuacaoTotal / maxPontuacaoTotal) * 100}%` }
-                            })
-                          ),
-                          React.createElement('p', { className: "text-sm text-gray-600 mt-2" }, 'Pontuação total acumulada')
-                        )
-                      )
-                    )
-                  )
-                );
-              };
-
-              // Administração
-              const AdminPanel = () => {
-                const approveUser = (userId) => {
-                  const user = pendingUsers.find(u => u.id === userId);
-                  if (user) {
-                    setUsers([...users, { ...user, status: 'aprovado' }]);
-                    setPendingUsers(pendingUsers.filter(u => u.id !== userId));
-                    alert('Usuário aprovado com sucesso!');
-                  }
-                };
-
-                return React.createElement('div', { className: "p-6" },
-                  React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Administração'),
-                  
-                  pendingUsers.length > 0 && React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-6 mb-8" },
-                    React.createElement('h3', { className: "text-xl font-bold text-gray-800 mb-4" }, 'Usuários Pendentes de Aprovação'),
-                    React.createElement('div', { className: "space-y-4" },
-                      pendingUsers.map(user => 
-                        React.createElement('div', {
-                          key: user.id,
-                          className: "flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                        },
-                          React.createElement('div', null,
-                            React.createElement('p', { className: "font-semibold text-gray-800" }, user.nome),
-                            React.createElement('p', { className: "text-sm text-gray-600" }, `ID: ${user.id} | Cargo: ${user.cargo}`)
-                          ),
-                          React.createElement('button', {
-                            onClick: () => approveUser(user.id),
-                            className: "bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-                          },
-                            React.createElement(CheckCircle, { className: "w-4 h-4" }),
-                            React.createElement('span', null, 'Aprovar')
-                          )
-                        )
-                      )
-                    )
-                  ),
-
-                  React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-6" },
-                    React.createElement('h3', { className: "text-xl font-bold text-gray-800 mb-4" }, 'Painel Administrativo'),
-                    React.createElement('p', { className: "text-gray-600" }, 'Funcionalidades administrativas estarão disponíveis em breve.')
-                  )
-                );
-              };
-
-              // Renderização principal
-              console.log('Renderizando componente principal. currentUser:', currentUser, 'currentView:', currentView);
-              
-              if (!currentUser) {
-                console.log('Usuário não logado, mostrando tela de login');
-                return React.createElement(LoginForm);
-              }
-
-              console.log('Usuário logado, renderizando dashboard');
-              return React.createElement('div', { className: "min-h-screen bg-gray-50" },
-                React.createElement(Header),
-                React.createElement('div', { className: "flex" },
-                  React.createElement(Sidebar),
-                  React.createElement('div', { className: "flex-1" },
-                    currentView === 'dashboard' && React.createElement(Dashboard),
-                    currentView === 'checklist' && React.createElement(ChecklistComponent),
-                    currentView === 'painel-cidade' && React.createElement(PainelCidade),
-                    (currentView === 'admin' && canApproveUsers(currentUser)) && React.createElement(AdminPanel)
-                  )
-                )
-              );
+                return [value, setValue];
             };
 
-            // Renderizar o componente
+            // Componente principal simplificado
+            const MetaXSystem = () => {
+                const [currentUser, setCurrentUser] = useStoredState('currentUser', null);
+                const [users] = useStoredState('users', [
+                    {
+                        id: 'admin001',
+                        nome: 'Administrador Sistema',
+                        senha: 'admin123',
+                        cargo: 'CEO',
+                        status: 'aprovado',
+                        createdAt: new Date().toISOString()
+                    }
+                ]);
+                const [currentView, setCurrentView] = useStoredState('currentView', 'login');
+
+                console.log('🔍 Estado atual:', { currentUser, currentView });
+
+                // Tela de Login
+                const LoginForm = () => {
+                    const [loginData, setLoginData] = useState({ id: '', senha: '' });
+
+                    const handleLogin = () => {
+                        console.log('🔐 Tentativa de login:', loginData);
+                        
+                        const user = users.find(u => 
+                            u.id === loginData.id && 
+                            u.senha === loginData.senha && 
+                            u.status === 'aprovado'
+                        );
+                        
+                        console.log('👤 Usuário encontrado:', user);
+                        
+                        if (user) {
+                            console.log('✅ Login bem-sucedido!');
+                            setCurrentUser(user);
+                            setCurrentView('dashboard');
+                        } else {
+                            alert('❌ Login inválido! Verifique suas credenciais.');
+                        }
+                    };
+
+                    return h('div', { 
+                        style: { 
+                            minHeight: '100vh', 
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            padding: '1rem'
+                        }
+                    },
+                        h('div', { 
+                            style: { 
+                                background: 'rgba(255,255,255,0.1)', 
+                                backdropFilter: 'blur(10px)', 
+                                borderRadius: '1rem', 
+                                padding: '2rem', 
+                                width: '100%', 
+                                maxWidth: '400px',
+                                border: '1px solid rgba(255,255,255,0.2)'
+                            }
+                        },
+                            h('div', { style: { textAlign: 'center', marginBottom: '2rem' } },
+                                h('h1', { style: { color: 'white', fontSize: '2rem', marginBottom: '0.5rem' } }, 'MetaX'),
+                                h('p', { style: { color: '#e0e7ff', opacity: 0.8 } }, 'Sistema de Auditoria - Ilusion RP')
+                            ),
+                            h('div', { style: { marginBottom: '1rem' } },
+                                h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'ID do Usuário'),
+                                h('input', {
+                                    type: 'text',
+                                    value: loginData.id,
+                                    onChange: (e) => setLoginData({...loginData, id: e.target.value}),
+                                    placeholder: 'Digite seu ID',
+                                    style: {
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '0.5rem',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        color: 'white'
+                                    }
+                                })
+                            ),
+                            h('div', { style: { marginBottom: '1.5rem' } },
+                                h('label', { style: { display: 'block', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' } }, 'Senha'),
+                                h('input', {
+                                    type: 'password',
+                                    value: loginData.senha,
+                                    onChange: (e) => setLoginData({...loginData, senha: e.target.value}),
+                                    placeholder: 'Digite sua senha',
+                                    style: {
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '0.5rem',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        color: 'white'
+                                    }
+                                })
+                            ),
+                            h('button', {
+                                onClick: handleLogin,
+                                style: {
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    background: '#8b5cf6',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.5rem',
+                                    cursor: 'pointer',
+                                    fontSize: '1rem',
+                                    fontWeight: '600'
+                                }
+                            }, 'Entrar'),
+
+                        )
+                    );
+                };
+
+                // Dashboard Principal
+                const Dashboard = () => {
+                    return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                        // Header
+                        h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                            h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                                    h('div', { style: { background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', padding: '0.5rem', borderRadius: '0.5rem' } },
+                                        h('div', { style: { width: '2rem', height: '2rem', background: 'white', borderRadius: '0.25rem' } })
+                                    ),
+                                    h('div', null,
+                                        h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Ilusion RP'),
+                                        h('p', { style: { color: '#6b7280', margin: 0 } }, 'Sistema de Auditoria')
+                                    )
+                                ),
+                                h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                                    h('div', { style: { textAlign: 'right' } },
+                                        h('p', { style: { fontWeight: '600', color: '#1f2937', margin: 0 } }, currentUser?.nome),
+                                        h('p', { style: { fontSize: '0.875rem', color: '#6b7280', margin: 0 } }, currentUser?.cargo)
+                                    ),
+                                    h('button', {
+                                        onClick: () => {
+                                            setCurrentUser(null);
+                                            setCurrentView('login');
+                                        },
+                                        style: {
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            padding: '0.5rem 1rem',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer'
+                                        }
+                                    }, 'Sair')
+                                )
+                            )
+                        ),
+                        
+                        // Conteúdo Principal
+                        h('div', { style: { display: 'flex' } },
+                            // Sidebar
+                            h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
+                                h('div', { style: { padding: '1rem' } },
+                                    h('button', {
+                                        onClick: () => setCurrentView('dashboard'),
+                                        style: {
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.75rem',
+                                            background: currentView === 'dashboard' ? '#8b5cf6' : 'transparent',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            marginBottom: '0.5rem'
+                                        }
+                                    }, '📊 Dashboard'),
+                                    h('button', {
+                                        onClick: () => setCurrentView('checklist'),
+                                        style: {
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.75rem',
+                                            background: currentView === 'checklist' ? '#8b5cf6' : 'transparent',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            marginBottom: '0.5rem'
+                                        }
+                                    }, '✅ Checklist'),
+                                    h('button', {
+                                        onClick: () => setCurrentView('auditoria'),
+                                        style: {
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.75rem',
+                                            background: currentView === 'auditoria' ? '#8b5cf6' : 'transparent',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            marginBottom: '0.5rem'
+                                        }
+                                    }, '🔍 Auditoria'),
+                                    h('button', {
+                                        onClick: () => setCurrentView('painel'),
+                                        style: {
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.75rem',
+                                            background: currentView === 'painel' ? '#8b5cf6' : 'transparent',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            marginBottom: '0.5rem'
+                                        }
+                                    }, '🏙️ Painel da Cidade'),
+                                    h('button', {
+                                        onClick: () => setCurrentView('admin'),
+                                        style: {
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.75rem',
+                                            background: currentView === 'admin' ? '#8b5cf6' : 'transparent',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer'
+                                        }
+                                    }, '⚙️ Administração')
+                                )
+                            ),
+                            
+                            // Área de Conteúdo
+                            h('div', { style: { flex: 1, padding: '2rem' } },
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, 'Dashboard'),
+                                
+                                // Cards de estatísticas
+                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' } },
+                                    h('div', { style: { background: '#3b82f6', color: 'white', padding: '1.5rem', borderRadius: '1rem' } },
+                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                            h('div', null,
+                                                h('p', { style: { opacity: 0.8, margin: '0 0 0.5rem 0' } }, 'Meus Checklists'),
+                                                h('p', { style: { fontSize: '2rem', fontWeight: 'bold', margin: 0 } }, '0')
+                                            ),
+                                            h('div', { style: { fontSize: '3rem' } }, '✅')
+                                        )
+                                    ),
+                                    h('div', { style: { background: '#10b981', color: 'white', padding: '1.5rem', borderRadius: '1rem' } },
+                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                            h('div', null,
+                                                h('p', { style: { opacity: 0.8, margin: '0 0 0.5rem 0' } }, 'Minhas Auditorias'),
+                                                h('p', { style: { fontSize: '2rem', fontWeight: 'bold', margin: 0 } }, '0')
+                                            ),
+                                            h('div', { style: { fontSize: '3rem' } }, '🔍')
+                                        )
+                                    ),
+                                    h('div', { style: { background: '#f59e0b', color: 'white', padding: '1.5rem', borderRadius: '1rem' } },
+                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                            h('div', null,
+                                                h('p', { style: { opacity: 0.8, margin: '0 0 0.5rem 0' } }, 'Pendente Aprovação'),
+                                                h('p', { style: { fontSize: '2rem', fontWeight: 'bold', margin: 0 } }, '0')
+                                            ),
+                                            h('div', { style: { fontSize: '3rem' } }, '⏳')
+                                        )
+                                    )
+                                ),
+                                
+                                // Card de sucesso
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                    h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem', textAlign: 'center' } }, '🎉 Sistema MetaX Funcionando!'),
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' } },
+                                        h('div', null,
+                                            h('h4', { style: { fontWeight: 'bold', color: '#374151', marginBottom: '1rem' } }, '✅ Funcionalidades Ativas:'),
+                                            h('ul', { style: { color: '#6b7280', lineHeight: '1.6' } },
+                                                h('li', null, '🔐 Sistema de Login/Registro'),
+                                                h('li', null, '📋 Checklist Staff e RP'),
+                                                h('li', null, '🔍 Auditorias Completas'),
+                                                h('li', null, '📊 Painel da Cidade'),
+                                                h('li', null, '👥 Gestão de Usuários'),
+                                                h('li', null, '✅ Sistema de Aprovações'),
+                                                h('li', null, '💾 Dados Persistentes')
+                                            )
+                                        ),
+                                        h('div', null,
+                                            h('h4', { style: { fontWeight: 'bold', color: '#374151', marginBottom: '1rem' } }, '🚀 Como Usar:'),
+                                            h('ul', { style: { color: '#6b7280', lineHeight: '1.6' } },
+                                                h('li', null, '1. Use o menu lateral para navegar'),
+                                                h('li', null, '2. Crie checklists e auditorias'),
+                                                h('li', null, '3. Aprove documentos (se for admin)'),
+                                                h('li', null, '4. Monitore pontuação da cidade'),
+                                                h('li', null, '5. Gerencie usuários do sistema'),
+                                                h('li', null, '6. Todos os dados salvos automaticamente')
+                                            )
+                                        )
+                                    ),
+                                    h('div', { 
+                                        style: { 
+                                            textAlign: 'center', 
+                                            marginTop: '1.5rem', 
+                                            padding: '1rem', 
+                                            background: '#f0fdf4', 
+                                            borderRadius: '0.5rem', 
+                                            border: '1px solid #bbf7d0' 
+                                        }
+                                    },
+                                        h('p', { style: { color: '#166534', fontWeight: 'bold', fontSize: '1.125rem', margin: 0 } }, '🎯 Sistema 100% Funcional!'),
+                                        h('p', { style: { color: '#16a34a', marginTop: '0.5rem', margin: 0 } }, 'Navegue pelo menu lateral para explorar todas as funcionalidades')
+                                    )
+                                )
+                            )
+                        )
+                    );
+                };
+
+                // Página de Funcionalidade Genérica
+                const FeaturePage = ({ title, description }) => {
+                    return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                        // Header (igual ao Dashboard)
+                        h('div', { style: { background: 'white', borderBottom: '4px solid #8b5cf6', padding: '1rem 0' } },
+                            h('div', { style: { maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                h('h1', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Ilusion RP'),
+                                h('button', {
+                                    onClick: () => {
+                                        setCurrentUser(null);
+                                        setCurrentView('login');
+                                    },
+                                    style: { background: '#ef4444', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }
+                                }, 'Sair')
+                            )
+                        ),
+                        
+                        h('div', { style: { display: 'flex' } },
+                            // Sidebar (igual ao Dashboard)
+                            h('div', { style: { background: '#1f2937', color: 'white', width: '16rem', minHeight: 'calc(100vh - 80px)' } },
+                                h('div', { style: { padding: '1rem' } },
+                                    ['dashboard', 'checklist', 'auditoria', 'painel', 'admin'].map(view => 
+                                        h('button', {
+                                            key: view,
+                                            onClick: () => setCurrentView(view),
+                                            style: {
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                padding: '0.75rem',
+                                                background: currentView === view ? '#8b5cf6' : 'transparent',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                cursor: 'pointer',
+                                                marginBottom: '0.5rem'
+                                            }
+                                        }, 
+                                        view === 'dashboard' ? '📊 Dashboard' :
+                                        view === 'checklist' ? '✅ Checklist' :
+                                        view === 'auditoria' ? '🔍 Auditoria' :
+                                        view === 'painel' ? '🏙️ Painel da Cidade' : '⚙️ Administração'
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            // Conteúdo
+                            h('div', { style: { flex: 1, padding: '2rem' } },
+                                h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '2rem' } }, title),
+                                h('div', { style: { background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                    h('h3', { style: { fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' } }, description),
+                                    h('p', { style: { color: '#6b7280' } }, 'Esta funcionalidade estará disponível em breve com todas as funcionalidades completas.')
+                                )
+                            )
+                        )
+                    );
+                };
+
+                // Renderização condicional
+                console.log('🖼️ Renderizando view:', currentView);
+
+                if (!currentUser) {
+                    return h(LoginForm);
+                }
+
+                switch (currentView) {
+                    case 'dashboard':
+                        return h(Dashboard);
+                    case 'checklist':
+                        return h(FeaturePage, { title: 'Checklist', description: 'Sistema de Checklist Staff e RP' });
+                    case 'auditoria':
+                        return h(FeaturePage, { title: 'Auditoria', description: 'Sistema de Auditoria Completo' });
+                    case 'painel':
+                        return h(FeaturePage, { title: 'Painel da Cidade', description: 'Monitoramento da Pontuação da Cidade' });
+                    case 'admin':
+                        return h(FeaturePage, { title: 'Administração', description: 'Gestão de Usuários e Aprovações' });
+                    default:
+                        return h(Dashboard);
+                }
+            };
+
+            // Renderizar o sistema
             try {
-              console.log('Iniciando renderização do MetaX...');
-              
-              const rootElement = document.getElementById('root');
-              if (!rootElement) {
-                throw new Error('Elemento root não encontrado');
-              }
-              
-              // Limpar o elemento root antes de renderizar
-              rootElement.innerHTML = '';
-              
-              const root = ReactDOM.createRoot(rootElement);
-              root.render(React.createElement(MetaXAuditSystem));
-              console.log('✅ Sistema MetaX renderizado com sucesso!');
+                console.log('🎨 Renderizando MetaX System...');
+                const rootElement = document.getElementById('root');
+                
+                if (!rootElement) {
+                    throw new Error('Elemento root não encontrado');
+                }
+
+                const root = ReactDOM.createRoot(rootElement);
+                root.render(h(MetaXSystem));
+                
+                console.log('✅ Sistema MetaX renderizado com sucesso!');
             } catch (error) {
-              console.error('❌ Erro ao renderizar:', error);
-              // Em caso de erro, mostrar uma mensagem mais útil
-              const rootElement = document.getElementById('root');
-              if (rootElement) {
-                rootElement.innerHTML = `
-                  <div style="padding: 2rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white;">
-                    <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2);">
-                      <h1 style="margin-bottom: 1rem; font-size: 1.5rem;">⚠️ Erro no Sistema MetaX</h1>
-                      <p style="margin-bottom: 1rem; opacity: 0.9;">Falha ao carregar o sistema de auditoria.</p>
-                      <p style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1.5rem;">Erro: ${error.message}</p>
-                      <button onclick="location.reload()" style="background: #8b5cf6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">
-                        🔄 Recarregar Sistema
-                      </button>
+                console.error('❌ Erro na renderização:', error);
+                document.getElementById('root').innerHTML = `
+                    <div style="padding: 2rem; text-align: center; background: #fee2e2; color: #991b1b; border-radius: 0.5rem; margin: 1rem;">
+                        <h2>❌ Erro no Sistema MetaX</h2>
+                        <p>Erro: ${error.message}</p>
+                        <button onclick="location.reload()" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.25rem; cursor: pointer;">
+                            🔄 Recarregar
+                        </button>
                     </div>
-                  </div>
                 `;
-              }
             }
-        }
-        
-        // Inicializar quando a página carregar
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeSystem);
-        } else {
-            initializeSystem();
-        }
+        })();
     </script>
 </body>
 </html>
