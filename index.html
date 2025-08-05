@@ -42,8 +42,20 @@
     </div>
     
     <script type="text/babel">
-        window.addEventListener('load', function() {
-            console.log('Página carregada, iniciando sistema...');
+        // Aguardar que tudo carregue
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado, iniciando sistema...');
+            
+            // Aguardar também o carregamento completo
+            if (document.readyState === 'complete') {
+                initializeSystem();
+            } else {
+                window.addEventListener('load', initializeSystem);
+            }
+        });
+        
+        function initializeSystem() {
+            console.log('Inicializando sistema MetaX...');
             
             const { useState, useEffect } = React;
             const { 
@@ -52,6 +64,7 @@
               AlertCircle, CheckCircle, Calendar, Hash 
             } = lucide;
             
+            // Hook para localStorage (substituindo o hatch)
             const useStoredState = (key, initialValue) => {
               const [value, setValue] = useState(() => {
                 try {
@@ -73,8 +86,10 @@
               return [value, setValue];
             };
 
+            // Simular o objeto hatch
             window.hatch = { useStoredState };
             
+            // Dados iniciais e configurações
             const CARGOS = [
               'CEO', 'Diretor', 'Alta Cúpula', 'ADM Staff',
               'RESP Comunidade', 'Mentoria', 'Staff Geral'
@@ -98,6 +113,7 @@
 
             const TURNOS = ['Manhã', 'Tarde', 'Noite'];
             
+            // Componente principal
             const MetaXAuditSystem = () => {
               const [currentUser, setCurrentUser] = useStoredState('currentUser', null);
               const [users, setUsers] = useStoredState('users', [
@@ -116,6 +132,7 @@
               const [currentView, setCurrentView] = useStoredState('currentView', 'login');
               const [notifications, setNotifications] = useStoredState('notifications', []);
 
+              // Verificar permissões
               const canValidateChecklist = (user) => {
                 return ['CEO', 'Diretor', 'Alta Cúpula'].includes(user?.cargo);
               };
@@ -128,6 +145,7 @@
                 return ['CEO', 'Diretor'].includes(user?.cargo);
               };
 
+              // Componente de Login
               const LoginForm = () => {
                 const [loginData, setLoginData] = useState({ id: '', senha: '' });
                 const [registerData, setRegisterData] = useState({
@@ -136,9 +154,16 @@
                 const [isRegister, setIsRegister] = useState(false);
 
                 const handleLogin = () => {
+                  console.log('Tentativa de login:', loginData);
+                  console.log('Usuários disponíveis:', users);
+                  
                   const user = users.find(u => u.id === loginData.id && u.senha === loginData.senha && u.status === 'aprovado');
+                  console.log('Usuário encontrado:', user);
+                  
                   if (user) {
+                    console.log('Login bem-sucedido, setando usuário atual');
                     setCurrentUser(user);
+                    console.log('Mudando view para dashboard');
                     setCurrentView('dashboard');
                   } else {
                     alert('ID ou senha incorretos, ou usuário ainda não aprovado!');
@@ -265,6 +290,7 @@
                 );
               };
 
+              // Header do sistema
               const Header = () => React.createElement('div', { className: "bg-white shadow-lg border-b-4 border-purple-500" },
                 React.createElement('div', { className: "max-w-7xl mx-auto px-4 py-4" },
                   React.createElement('div', { className: "flex items-center justify-between" },
@@ -294,6 +320,7 @@
                 )
               );
 
+              // Menu lateral
               const Sidebar = () => {
                 const menuItems = [
                   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -302,6 +329,7 @@
                   { id: 'painel-cidade', label: 'Painel da Cidade', icon: Users }
                 ];
 
+                // Adicionar item de admin apenas se o usuário pode aprovar
                 if (canApproveUsers(currentUser)) {
                   menuItems.push({ id: 'admin', label: 'Administração', icon: Settings });
                 }
@@ -325,6 +353,7 @@
                 );
               };
 
+              // Dashboard Principal  
               const Dashboard = () => {
                 const myChecklists = checklists.filter(c => c.autorId === currentUser.id);
                 const myAuditorias = auditorias.filter(a => a.autorId === currentUser.id);
@@ -403,6 +432,7 @@
                 );
               };
 
+              // Componente de Checklist (simplificado)
               const ChecklistComponent = () => {
                 return React.createElement('div', { className: "p-6" },
                   React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, 'Checklist'),
@@ -431,6 +461,7 @@
                 );
               };
 
+              // Painel da Cidade  
               const PainelCidade = () => {
                 const checklistsAprovados = checklists.filter(c => c.status === 'aprovado');
                 const auditoriasAprovadas = auditorias.filter(a => a.status === 'aprovada');
@@ -504,6 +535,7 @@
                 );
               };
 
+              // Administração
               const AdminPanel = () => {
                 const approveUser = (userId) => {
                   const user = pendingUsers.find(u => u.id === userId);
@@ -548,10 +580,15 @@
                 );
               };
 
+              // Renderização principal
+              console.log('Renderizando componente principal. currentUser:', currentUser, 'currentView:', currentView);
+              
               if (!currentUser) {
+                console.log('Usuário não logado, mostrando tela de login');
                 return React.createElement(LoginForm);
               }
 
+              console.log('Usuário logado, renderizando dashboard');
               return React.createElement('div', { className: "min-h-screen bg-gray-50" },
                 React.createElement(Header),
                 React.createElement('div', { className: "flex" },
@@ -566,27 +603,49 @@
               );
             };
 
+            // Renderizar o componente
             try {
               console.log('Iniciando renderização do MetaX...');
-              const root = ReactDOM.createRoot(document.getElementById('root'));
+              
+              // Verificar se React e ReactDOM estão disponíveis
+              if (typeof React === 'undefined') {
+                throw new Error('React não foi carregado');
+              }
+              if (typeof ReactDOM === 'undefined') {
+                throw new Error('ReactDOM não foi carregado');
+              }
+              
+              const rootElement = document.getElementById('root');
+              if (!rootElement) {
+                throw new Error('Elemento root não encontrado');
+              }
+              
+              // Limpar o elemento root antes de renderizar
+              rootElement.innerHTML = '';
+              
+              const root = ReactDOM.createRoot(rootElement);
               root.render(React.createElement(MetaXAuditSystem));
               console.log('✅ Sistema MetaX renderizado com sucesso!');
             } catch (error) {
               console.error('❌ Erro ao renderizar:', error);
-              document.getElementById('root').innerHTML = `
-                <div style="padding: 2rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white;">
-                  <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2);">
-                    <h1 style="margin-bottom: 1rem; font-size: 1.5rem;">⚠️ Erro no Sistema MetaX</h1>
-                    <p style="margin-bottom: 1rem; opacity: 0.9;">Falha ao carregar o sistema de auditoria.</p>
-                    <p style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1.5rem;">Erro: ${error.message}</p>
-                    <button onclick="location.reload()" style="background: #8b5cf6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">
-                      🔄 Recarregar Sistema
-                    </button>
+              // Em caso de erro, mostrar uma mensagem mais útil
+              const rootElement = document.getElementById('root');
+              if (rootElement) {
+                rootElement.innerHTML = `
+                  <div style="padding: 2rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white;">
+                    <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2);">
+                      <h1 style="margin-bottom: 1rem; font-size: 1.5rem;">⚠️ Erro no Sistema MetaX</h1>
+                      <p style="margin-bottom: 1rem; opacity: 0.9;">Falha ao carregar o sistema de auditoria.</p>
+                      <p style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 1.5rem;">Erro: ${error.message}</p>
+                      <button onclick="location.reload()" style="background: #8b5cf6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">
+                        🔄 Recarregar Sistema
+                      </button>
+                    </div>
                   </div>
-                </div>
-              `;
+                `;
+              }
             }
-        });
+        }
     </script>
 </body>
 </html>
