@@ -43,19 +43,15 @@
     
     <script type="text/babel">
         // Aguardar que tudo carregue
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM carregado, iniciando sistema...');
-            
-            // Aguardar também o carregamento completo
-            if (document.readyState === 'complete') {
-                initializeSystem();
-            } else {
-                window.addEventListener('load', initializeSystem);
-            }
-        });
-        
         function initializeSystem() {
             console.log('Inicializando sistema MetaX...');
+            
+            // Verificar se as dependências estão carregadas
+            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined' || typeof lucide === 'undefined') {
+                console.log('Aguardando dependências...');
+                setTimeout(initializeSystem, 500);
+                return;
+            }
             
             const { useState, useEffect } = React;
             const { 
@@ -607,14 +603,6 @@
             try {
               console.log('Iniciando renderização do MetaX...');
               
-              // Verificar se React e ReactDOM estão disponíveis
-              if (typeof React === 'undefined') {
-                throw new Error('React não foi carregado');
-              }
-              if (typeof ReactDOM === 'undefined') {
-                throw new Error('ReactDOM não foi carregado');
-              }
-              
               const rootElement = document.getElementById('root');
               if (!rootElement) {
                 throw new Error('Elemento root não encontrado');
@@ -645,6 +633,13 @@
                 `;
               }
             }
+        }
+        
+        // Inicializar quando a página carregar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSystem);
+        } else {
+            initializeSystem();
         }
     </script>
 </body>
