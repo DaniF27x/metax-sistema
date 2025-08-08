@@ -1884,6 +1884,346 @@
                         );
                     };
 
+                    // Página de Administração 
+                    const AdminPage = () => {
+                        const podeAdministrar = ['CEO', 'Diretor'].includes(currentUser?.cargo);
+                        
+                        if (!podeAdministrar) {
+                            return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                                h(Header),
+                                h('div', { style: { display: 'flex' } },
+                                    h(Sidebar),
+                                    h('main', { style: { flex: 1, padding: '40px', textAlign: 'center' } },
+                                        h('div', { style: { background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                            h('div', { style: { fontSize: '4rem', marginBottom: '16px' } }, '🔒'),
+                                            h('h2', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#dc2626', marginBottom: '16px' } }, 'Acesso Negado'),
+                                            h('p', { style: { fontSize: '1.2rem', color: '#6b7280' } }, 'Apenas CEO e Diretor podem acessar esta área.')
+                                        )
+                                    )
+                                )
+                            );
+                        }
+
+                        const aprovarUsuario = (userId) => {
+                            const user = pendingUsers.find(u => u.id === userId);
+                            if (user) {
+                                setUsers([...users, { ...user, status: 'aprovado' }]);
+                                setPendingUsers(pendingUsers.filter(u => u.id !== userId));
+                                alert(`✅ Usuário ${user.nome} aprovado!`);
+                            }
+                        };
+
+                        const rejeitarUsuario = (userId) => {
+                            const user = pendingUsers.find(u => u.id === userId);
+                            if (user) {
+                                setPendingUsers(pendingUsers.filter(u => u.id !== userId));
+                                alert(`❌ Usuário ${user.nome} rejeitado!`);
+                            }
+                        };
+
+                        const aprovarChecklist = (checklistId) => {
+                            setChecklists(checklists.map(c => 
+                                c.id === checklistId ? { ...c, status: 'aprovado', aprovadoPor: currentUser.id, aprovadoEm: new Date().toISOString() } : c
+                            ));
+                            alert('✅ Checklist aprovado!');
+                        };
+
+                        const rejeitarChecklist = (checklistId) => {
+                            const motivo = prompt('💬 Motivo da rejeição:');
+                            if (!motivo) return;
+                            
+                            setChecklists(checklists.map(c => 
+                                c.id === checklistId ? { 
+                                    ...c, 
+                                    status: 'rejeitado', 
+                                    rejeitadoPor: currentUser.id,
+                                    motivoRejeicao: motivo,
+                                    rejeitadoEm: new Date().toISOString()
+                                } : c
+                            ));
+                            alert('❌ Checklist rejeitado!');
+                        };
+
+                        const aprovarAuditoria = (auditoriaId) => {
+                            setAuditorias(auditorias.map(a => 
+                                a.id === auditoriaId ? { ...a, status: 'aprovada', aprovadoPor: currentUser.id, aprovadoEm: new Date().toISOString() } : a
+                            ));
+                            alert('✅ Auditoria aprovada!');
+                        };
+
+                        const rejeitarAuditoria = (auditoriaId) => {
+                            const motivo = prompt('💬 Motivo da rejeição:');
+                            if (!motivo) return;
+                            
+                            setAuditorias(auditorias.map(a => 
+                                a.id === auditoriaId ? { 
+                                    ...a, 
+                                    status: 'rejeitada', 
+                                    rejeitadoPor: currentUser.id,
+                                    motivoRejeicao: motivo,
+                                    rejeitadoEm: new Date().toISOString()
+                                } : a
+                            ));
+                            alert('❌ Auditoria rejeitada!');
+                        };
+
+                        const removerUsuario = (userId) => {
+                            if (confirm('⚠️ Tem certeza que deseja remover este usuário?')) {
+                                setUsers(users.filter(u => u.id !== userId));
+                                alert('🗑️ Usuário removido!');
+                            }
+                        };
+
+                        const checklistsPendentes = checklists.filter(c => c.status === 'aguardando_aprovacao');
+                        const auditoriasPendentes = auditorias.filter(a => a.status === 'aguardando_aprovacao');
+
+                        return h('div', { style: { minHeight: '100vh', background: '#f8fafc' } },
+                            h(Header),
+                            h('div', { style: { display: 'flex' } },
+                                h(Sidebar),
+                                h('main', { style: { flex: 1, padding: '40px' } },
+                                    h('h2', { style: { fontSize: '2.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '32px' } }, '⚙️ Administração'),
+
+                                    // Cards de resumo
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' } },
+                                        h('div', { style: { background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', padding: '24px', borderRadius: '16px', textAlign: 'center' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '👥'),
+                                            h('h3', { style: { fontSize: '1.2rem', marginBottom: '8px' } }, 'Usuários Pendentes'),
+                                            h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold' } }, pendingUsers.length)
+                                        ),
+                                        h('div', { style: { background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: 'white', padding: '24px', borderRadius: '16px', textAlign: 'center' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '✅'),
+                                            h('h3', { style: { fontSize: '1.2rem', marginBottom: '8px' } }, 'Checklists Pendentes'),
+                                            h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold' } }, checklistsPendentes.length)
+                                        ),
+                                        h('div', { style: { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', padding: '24px', borderRadius: '16px', textAlign: 'center' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '🔍'),
+                                            h('h3', { style: { fontSize: '1.2rem', marginBottom: '8px' } }, 'Auditorias Pendentes'),
+                                            h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold' } }, auditoriasPendentes.length)
+                                        ),
+                                        h('div', { style: { background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', padding: '24px', borderRadius: '16px', textAlign: 'center' } },
+                                            h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '👤'),
+                                            h('h3', { style: { fontSize: '1.2rem', marginBottom: '8px' } }, 'Total de Usuários'),
+                                            h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold' } }, users.length)
+                                        )
+                                    ),
+
+                                    // Usuários pendentes
+                                    pendingUsers.length > 0 && h('div', { style: { background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '32px' } },
+                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' } }, '👥 Usuários Aguardando Aprovação'),
+                                        h('div', { style: { display: 'grid', gap: '16px' } },
+                                            pendingUsers.map(user =>
+                                                h('div', { 
+                                                    key: user.id, 
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '20px', 
+                                                        background: '#fef3c7', 
+                                                        borderRadius: '12px',
+                                                        border: '2px solid #f59e0b'
+                                                    } 
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: '700', color: '#1f2937', fontSize: '1.1rem', margin: '0 0 4px 0' } }, user.nome),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.9rem', margin: '0 0 4px 0' } }, `ID: ${user.id} | Cargo: ${user.cargo}`),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.8rem', margin: 0 } }, `Cadastrado: ${new Date(user.createdAt).toLocaleDateString('pt-BR')}`)
+                                                    ),
+                                                    h('div', { style: { display: 'flex', gap: '12px' } },
+                                                        h('button', { 
+                                                            onClick: () => aprovarUsuario(user.id), 
+                                                            style: { 
+                                                                background: '#10b981', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '✅ Aprovar'),
+                                                        h('button', { 
+                                                            onClick: () => rejeitarUsuario(user.id), 
+                                                            style: { 
+                                                                background: '#ef4444', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '❌ Rejeitar')
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),
+
+                                    // Checklists pendentes
+                                    checklistsPendentes.length > 0 && h('div', { style: { background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '32px' } },
+                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' } }, '✅ Checklists Aguardando Aprovação'),
+                                        h('div', { style: { display: 'grid', gap: '16px' } },
+                                            checklistsPendentes.slice(0, 10).map(checklist => {
+                                                const autor = users.find(u => u.id === checklist.autorId);
+                                                return h('div', { 
+                                                    key: checklist.id, 
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '20px', 
+                                                        background: '#dbeafe', 
+                                                        borderRadius: '12px',
+                                                        border: '2px solid #3b82f6'
+                                                    } 
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: '700', color: '#1f2937', fontSize: '1.1rem', margin: '0 0 4px 0' } }, 
+                                                            `${checklist.tipo === 'staff' ? 'STAFF' : 'ROLEPLAY'} - ${checklist.equipe || checklist.setor}`
+                                                        ),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.9rem', margin: '0 0 4px 0' } }, 
+                                                            `👤 Por: ${autor?.nome || 'Usuário não encontrado'} | 📊 Nota: ${checklist.notaFinal}/50`
+                                                        ),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.8rem', margin: 0 } }, 
+                                                            `📅 ${new Date(checklist.createdAt).toLocaleDateString('pt-BR')}`
+                                                        )
+                                                    ),
+                                                    h('div', { style: { display: 'flex', gap: '12px' } },
+                                                        h('button', { 
+                                                            onClick: () => aprovarChecklist(checklist.id), 
+                                                            style: { 
+                                                                background: '#10b981', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '✅ Aprovar'),
+                                                        h('button', { 
+                                                            onClick: () => rejeitarChecklist(checklist.id), 
+                                                            style: { 
+                                                                background: '#ef4444', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '❌ Rejeitar')
+                                                    )
+                                                );
+                                            })
+                                        )
+                                    ),
+
+                                    // Auditorias pendentes
+                                    auditoriasPendentes.length > 0 && h('div', { style: { background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '32px' } },
+                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' } }, '🔍 Auditorias Aguardando Aprovação'),
+                                        h('div', { style: { display: 'grid', gap: '16px' } },
+                                            auditoriasPendentes.slice(0, 10).map(auditoria => {
+                                                const autor = users.find(u => u.id === auditoria.autorId);
+                                                return h('div', { 
+                                                    key: auditoria.id, 
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '20px', 
+                                                        background: '#e0e7ff', 
+                                                        borderRadius: '12px',
+                                                        border: '2px solid #8b5cf6'
+                                                    } 
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: '700', color: '#1f2937', fontSize: '1.1rem', margin: '0 0 4px 0' } }, 
+                                                            `AUDITORIA ${auditoria.tipo === 'staff' ? 'STAFF' : 'ROLEPLAY'} - ${auditoria.setor}`
+                                                        ),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.9rem', margin: '0 0 4px 0' } }, 
+                                                            `👤 Por: ${autor?.nome || 'Usuário não encontrado'} | 📊 Nota: ${auditoria.notaFinal}/100`
+                                                        ),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.8rem', margin: 0 } }, 
+                                                            `📅 ${new Date(auditoria.createdAt).toLocaleDateString('pt-BR')} | 🕐 Turno: ${auditoria.turno}`
+                                                        )
+                                                    ),
+                                                    h('div', { style: { display: 'flex', gap: '12px' } },
+                                                        h('button', { 
+                                                            onClick: () => aprovarAuditoria(auditoria.id), 
+                                                            style: { 
+                                                                background: '#10b981', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '✅ Aprovar'),
+                                                        h('button', { 
+                                                            onClick: () => rejeitarAuditoria(auditoria.id), 
+                                                            style: { 
+                                                                background: '#ef4444', 
+                                                                color: 'white', 
+                                                                border: 'none', 
+                                                                borderRadius: '8px', 
+                                                                padding: '10px 16px', 
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            } 
+                                                        }, '❌ Rejeitar')
+                                                    )
+                                                );
+                                            })
+                                        )
+                                    ),
+
+                                    // Lista de todos os usuários
+                                    h('div', { style: { background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
+                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' } }, '👤 Todos os Usuários'),
+                                        h('div', { style: { display: 'grid', gap: '12px' } },
+                                            users.map(user =>
+                                                h('div', { 
+                                                    key: user.id, 
+                                                    style: { 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between', 
+                                                        alignItems: 'center', 
+                                                        padding: '16px', 
+                                                        background: '#f9fafb', 
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #e5e7eb'
+                                                    } 
+                                                },
+                                                    h('div', null,
+                                                        h('p', { style: { fontWeight: '600', color: '#1f2937', margin: '0 0 4px 0' } }, user.nome),
+                                                        h('p', { style: { color: '#6b7280', fontSize: '0.9rem', margin: 0 } }, `ID: ${user.id} | ${user.cargo}`)
+                                                    ),
+                                                    user.id !== currentUser.id && h('button', { 
+                                                        onClick: () => removerUsuario(user.id), 
+                                                        style: { 
+                                                            background: '#ef4444', 
+                                                            color: 'white', 
+                                                            border: 'none', 
+                                                            borderRadius: '6px', 
+                                                            padding: '8px 12px', 
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 'bold',
+                                                            cursor: 'pointer'
+                                                        } 
+                                                    }, '🗑️ Remover')
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    };
+
                     // Página do Painel Financeiro
                     const PainelFinanceiroPage = () => {
                         const [form, setForm] = useState({
@@ -2214,6 +2554,8 @@
                             return h(PainelCidadePage);
                         case 'financeiro':
                             return h(PainelFinanceiroPage);
+                        case 'admin':
+                            return h(AdminPage);
                         default:
                             return h(DashboardPage);
                     }
