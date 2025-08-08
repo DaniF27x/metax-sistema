@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MetaX v5.0 - Sistema ULTRA COMPLETO</title>
+    <title>MetaX v5.0 - Melhor Sistema Auditor de FiveM Mundial</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,11 +28,11 @@
 </head>
 <body>
     <div id="root">
-        <div class="loading">🏆 Auditoria da MetaX - Melhor Sistema de FiveM</div>
+        <div class="loading">Bem-vindo ao Sistema Auditoria MetaX</div>
     </div>
     
     <script>
-        console.log('🔥 Iniciando MetaX System v4.0 - SISTEMA ULTRA COMPLETO...');
+        console.log('🔥 Iniciando Sistema Auditoria MetaX...');
         
         // Aguardar carregamento completo do React
         setTimeout(() => {
@@ -82,6 +82,18 @@
                     } else {
                         return `${minutos}m`;
                     }
+                };
+
+                // SISTEMA SIMPLIFICADO: Nota direta no final
+                const validarNota = (nota, tipoFormulario) => {
+                    const maxNota = tipoFormulario === 'checklist' ? 50 : 100;
+                    const notaNum = parseFloat(nota);
+                    
+                    if (isNaN(notaNum) || notaNum < 0 || notaNum > maxNota) {
+                        return { valida: false, erro: `Nota deve ser entre 0 e ${maxNota}` };
+                    }
+                    
+                    return { valida: true, nota: notaNum };
                 };
 
                 // Componente principal do sistema
@@ -196,8 +208,6 @@
                             setIsResetPassword(false);
                             setResetData({ id: '', novaSenha: '' });
                         };
-
-
 
                         const inputStyle = {
                             width: '100%',
@@ -407,7 +417,7 @@
                         },
                             h('div', null,
                                 h('h1', { style: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937', margin: 0 } }, 'MetaX - Ilusion RP'),
-                                h('p', { style: { fontSize: '0.9rem', color: '#6b7280', margin: '4px 0 0 0' } }, 'Sistema de Auditoria ULTRA COMPLETO')
+                                h('p', { style: { fontSize: '0.9rem', color: '#6b7280', margin: '4px 0 0 0' } }, 'Melhor Sistema Auditor de FiveM Mundial')
                             ),
                             h('div', { style: { display: 'flex', alignItems: 'center', gap: '16px' } },
                                 h('div', { style: { textAlign: 'right' } },
@@ -561,110 +571,36 @@
                                         )
                                     ),
 
-                                    // Métricas secundárias
-                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' } },
-                                        h('div', { style: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' } },
-                                            h('div', { style: { display: 'flex', alignItems: 'center', marginBottom: '12px' } },
-                                                h('div', { style: { fontSize: '2rem', marginRight: '12px' } }, '⚡'),
-                                                h('h4', { style: { fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: 0 } }, 'Últimas 24h')
-                                            ),
-                                            h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#059669', margin: '0 0 4px 0' } }, atividadeRecente.length),
-                                            h('p', { style: { fontSize: '0.85rem', color: '#6b7280', margin: 0 } }, 'itens criados')
-                                        ),
-                                        h('div', { style: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' } },
-                                            h('div', { style: { display: 'flex', alignItems: 'center', marginBottom: '12px' } },
-                                                h('div', { style: { fontSize: '2rem', marginRight: '12px' } }, '📝'),
-                                                h('h4', { style: { fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: 0 } }, 'Em Andamento')
-                                            ),
-                                            h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#d97706', margin: '0 0 4px 0' } }, itensEmAndamento.length),
-                                            h('p', { style: { fontSize: '0.85rem', color: '#6b7280', margin: 0 } }, 'para finalizar')
-                                        ),
-                                        h('div', { style: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' } },
-                                            h('div', { style: { display: 'flex', alignItems: 'center', marginBottom: '12px' } },
-                                                h('div', { style: { fontSize: '2rem', marginRight: '12px' } }, '👤'),
-                                                h('h4', { style: { fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: 0 } }, 'Seu Cargo')
-                                            ),
-                                            h('p', { style: { fontSize: '1.2rem', fontWeight: 'bold', color: '#8b5cf6', margin: '0 0 4px 0' } }, currentUser?.cargo),
-                                            h('p', { style: { fontSize: '0.85rem', color: '#6b7280', margin: 0 } }, `ID: ${currentUser?.id}`)
-                                        ),
-                                        h('div', { style: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' } },
-                                            h('div', { style: { display: 'flex', alignItems: 'center', marginBottom: '12px' } },
-                                                h('div', { style: { fontSize: '2rem', marginRight: '12px' } }, '🏆'),
-                                                h('h4', { style: { fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: 0 } }, 'Pontuação')
-                                            ),
-                                            h('p', { style: { fontSize: '2rem', fontWeight: 'bold', color: '#dc2626', margin: '0 0 4px 0' } }, 
-                                                (meusChecklists.filter(c => c.status === 'aprovado').length * 50) + 
-                                                (minhasAuditorias.filter(a => a.status === 'aprovada').length * 100)
-                                            ),
-                                            h('p', { style: { fontSize: '0.85rem', color: '#6b7280', margin: 0 } }, 'pontos gerados')
-                                        )
-                                    ),
-
-                                    // Alertas e ações rápidas
-                                    itensEmAndamento.length > 0 && h('div', { style: { background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '16px', padding: '24px', marginBottom: '32px' } },
-                                        h('div', { style: { display: 'flex', alignItems: 'center', marginBottom: '16px' } },
-                                            h('div', { style: { fontSize: '2.5rem', marginRight: '16px' } }, '⚠️'),
-                                            h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#92400e', margin: 0 } }, 'Ações Necessárias')
-                                        ),
-                                        h('div', { style: { display: 'grid', gap: '12px' } },
-                                            itensEmAndamento.slice(0, 3).map(item => 
-                                                h('div', { key: item.id, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'white', borderRadius: '8px', border: '1px solid #f59e0b' } },
-                                                    h('div', null,
-                                                        h('p', { style: { fontWeight: '600', color: '#1f2937', margin: '0 0 4px 0' } }, 
-                                                            `${item.tipo || 'Auditoria'} - ${item.equipe || item.setor || 'Não especificado'}`
-                                                        ),
-                                                        h('p', { style: { fontSize: '0.85rem', color: '#6b7280', margin: 0 } }, 
-                                                            `Criado em ${new Date(item.createdAt).toLocaleDateString('pt-BR')}`
-                                                        )
-                                                    ),
-                                                    h('button', {
-                                                        onClick: () => setCurrentView(item.tipo ? 'checklist' : 'auditoria'),
-                                                        style: {
-                                                            background: '#f59e0b',
-                                                            color: 'white',
-                                                            padding: '8px 16px',
-                                                            border: 'none',
-                                                            borderRadius: '6px',
-                                                            cursor: 'pointer',
-                                                            fontWeight: '600',
-                                                            fontSize: '0.85rem'
-                                                        }
-                                                    }, '📝 Finalizar')
-                                                )
-                                            )
-                                        ),
-                                        itensEmAndamento.length > 3 && h('p', { style: { textAlign: 'center', marginTop: '12px', color: '#92400e', fontWeight: '600' } }, 
-                                            `... e mais ${itensEmAndamento.length - 3} itens pendentes`
-                                        )
-                                    ),
-
                                     // Bem-vindo melhorado
                                     h('div', { style: { background: 'white', borderRadius: '20px', padding: '40px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', textAlign: 'center', position: 'relative', overflow: 'hidden' } },
                                         h('div', { style: { position: 'absolute', top: '-50px', right: '-50px', fontSize: '15rem', opacity: 0.03, transform: 'rotate(15deg)' } }, '🎉'),
-                                        h('h3', { style: { fontSize: '2.4rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '20px' } }, '🚀 MetaX v5.0 ULTRA COMPLETO!'),
-                                        h('p', { style: { color: '#16a34a', fontSize: '1.4rem', lineHeight: 1.6, marginBottom: '32px', fontWeight: '500' } }, 
-                                            '✅ Sistema 100% funcional com painel admin melhorado, métricas avançadas e alertas inteligentes!'
+                                        h('h3', { style: { fontSize: '2.4rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '20px' } }, '🚀 MetaX - Melhor Sistema Mundial!'),
+                                        h('p', { style: { color: '#16a34a', fontSize: '1.4rem', lineHeight: 1.6, marginBottom: '16px', fontWeight: '500' } }, 
+                                            '✅ O mais avançado sistema de auditoria para servidores FiveM!'
+                                        ),
+                                        h('p', { style: { color: '#8b5cf6', fontSize: '1.2rem', lineHeight: 1.6, marginBottom: '32px', fontWeight: '500' } }, 
+                                            '🎯 Sistema completo de auditorias e checklists para máxima qualidade no seu servidor!'
                                         ),
                                         h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginTop: '32px' } },
                                             h('div', { style: { background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', padding: '24px', borderRadius: '16px', border: '2px solid #16a34a' } },
-                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '🚔'),
-                                                h('p', { style: { fontWeight: 'bold', color: '#16a34a', margin: 0, fontSize: '1.1rem' } }, 'Polícia com Subsetores'),
-                                                h('p', { style: { fontSize: '0.9rem', color: '#15803d', margin: '8px 0 0 0', opacity: 0.8 } }, 'PRF, Civil, Militar, BOPE...')
+                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '📝'),
+                                                h('p', { style: { fontWeight: 'bold', color: '#16a34a', margin: 0, fontSize: '1.1rem' } }, 'Perguntas Gerais'),
+                                                h('p', { style: { fontSize: '0.9rem', color: '#15803d', margin: '8px 0 0 0', opacity: 0.8 } }, '8 perguntas para todas as organizações')
                                             ),
                                             h('div', { style: { background: 'linear-gradient(135deg, #fefbff, #faf5ff)', padding: '24px', borderRadius: '16px', border: '2px solid #8b5cf6' } },
-                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '📊'),
-                                                h('p', { style: { fontWeight: 'bold', color: '#8b5cf6', margin: 0, fontSize: '1.1rem' } }, 'Dashboard Inteligente'),
-                                                h('p', { style: { fontSize: '0.9rem', color: '#7c3aed', margin: '8px 0 0 0', opacity: 0.8 } }, 'Métricas avançadas e alertas')
+                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '🎯'),
+                                                h('p', { style: { fontWeight: 'bold', color: '#8b5cf6', margin: 0, fontSize: '1.1rem' } }, 'Perguntas Específicas'),
+                                                h('p', { style: { fontSize: '0.9rem', color: '#7c3aed', margin: '8px 0 0 0', opacity: 0.8 } }, 'Para cada setor/equipe específica')
                                             ),
                                             h('div', { style: { background: 'linear-gradient(135deg, #fefbff, #fef3c7)', padding: '24px', borderRadius: '16px', border: '2px solid #f59e0b' } },
-                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '⚡'),
-                                                h('p', { style: { fontWeight: 'bold', color: '#d97706', margin: 0, fontSize: '1.1rem' } }, 'Admin Melhorado'),
-                                                h('p', { style: { fontSize: '0.9rem', color: '#b45309', margin: '8px 0 0 0', opacity: 0.8 } }, 'Interface clara quando vazia')
+                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '🚔'),
+                                                h('p', { style: { fontWeight: 'bold', color: '#d97706', margin: 0, fontSize: '1.1rem' } }, 'Polícia com Subsetores'),
+                                                h('p', { style: { fontSize: '0.9rem', color: '#b45309', margin: '8px 0 0 0', opacity: 0.8 } }, 'PRF, Civil, Militar, BOPE...')
                                             ),
                                             h('div', { style: { background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', padding: '24px', borderRadius: '16px', border: '2px solid #0ea5e9' } },
-                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '🎯'),
-                                                h('p', { style: { fontWeight: 'bold', color: '#0ea5e9', margin: 0, fontSize: '1.1rem' } }, 'Meta: 815 Pontos'),
-                                                h('p', { style: { fontSize: '0.9rem', color: '#0284c7', margin: '8px 0 0 0', opacity: 0.8 } }, 'Sistema de pontuação ativo')
+                                                h('div', { style: { fontSize: '3rem', marginBottom: '12px' } }, '✅'),
+                                                h('p', { style: { fontWeight: 'bold', color: '#0ea5e9', margin: 0, fontSize: '1.1rem' } }, 'Checklist com Perguntas'),
+                                                h('p', { style: { fontSize: '0.9rem', color: '#0284c7', margin: '8px 0 0 0', opacity: 0.8 } }, 'Sistema próprio do checklist')
                                             )
                                         )
                                     )
@@ -673,7 +609,7 @@
                         );
                     };
 
-                    // Página de Checklist - SISTEMA FUNCIONAL CORRIGIDO
+                    // Página de Checklist - SISTEMA COM TODAS AS PERGUNTAS
                     const ChecklistPage = () => {
                         const [currentChecklistState, setCurrentChecklistState] = useState(null);
                         const [checklistFormState, setChecklistFormState] = useState({});
@@ -697,20 +633,33 @@
                                 return;
                             }
 
+                            // Validar nota final
+                            if (!checklistFormState.notaFinal) {
+                                alert('⚠️ Digite a nota final do checklist (0 a 50)!');
+                                return;
+                            }
+
+                            const validacao = validarNota(checklistFormState.notaFinal, 'checklist');
+                            if (!validacao.valida) {
+                                alert(`⚠️ ${validacao.erro}!`);
+                                return;
+                            }
+
                             const updatedChecklist = {
                                 ...currentChecklistState,
                                 ...checklistFormState,
+                                notaFinal: validacao.nota,
                                 updatedAt: new Date().toISOString()
                             };
 
                             // Verificar confirmações de painel
                             const confirmacoesCompletas = Object.values(updatedChecklist.confirmacoesPainel).every(val => val !== '' && val !== null);
                             
-                            if (confirmacoesCompletas) {
+                            if (confirmacoesCompletas && validacao.valida) {
                                 updatedChecklist.status = 'aguardando_aprovacao';
-                                alert('✅ Checklist enviado para aprovação!');
+                                alert(`✅ Checklist enviado para aprovação!\n📊 Nota final: ${validacao.nota}/50 pontos`);
                             } else {
-                                alert('💾 Checklist salvo como rascunho! Complete as confirmações para envio.');
+                                alert('💾 Checklist salvo como rascunho! Complete tudo para envio.');
                             }
 
                             const existingIndex = checklists.findIndex(c => c.id === currentChecklistState.id);
@@ -723,8 +672,6 @@
                             setCurrentChecklistState(null);
                             setChecklistFormState({});
                         };
-
-
 
                         // Se está editando um checklist específico, mostrar formulário
                         if (currentChecklistState) {
@@ -811,340 +758,93 @@
                                                     )
                                                 ),
                                                 
-                                                // Seção adicional para Staff com perguntas específicas - CORRIGIDA
-                                                currentChecklistState.tipo === 'staff' && h('div', { style: { marginTop: '40px', padding: '32px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', borderRadius: '20px' } },
-                                                    h('h4', { style: { fontSize: '1.6rem', fontWeight: 'bold', color: 'white', marginBottom: '24px' } }, '👥 ANÁLISE DETALHADA DA EQUIPE STAFF'),
-                                                    h('div', { style: { display: 'grid', gap: '28px' } },
-                                                        [
-                                                            { q: '🏢 A estrutura organizacional da equipe está bem definida?', key: 'estruturaOrganizacional' },
-                                                            { q: '⚡ Os membros respondem rapidamente aos chamados/tickets?', key: 'rapidezResposta' },
-                                                            { q: '📋 Existe cumprimento das normas internas estabelecidas?', key: 'cumprimentoNormas' },
-                                                            { q: '🎯 As metas da equipe estão sendo atingidas regularmente?', key: 'metasAtingidas' },
-                                                            { q: '🤝 Há boa comunicação e colaboração entre os membros?', key: 'colaboracaoEquipe' },
-                                                            { q: '🔄 A equipe se adapta bem às mudanças e atualizações?', key: 'adaptacaoMudancas' },
-                                                            { q: '📊 Os relatórios e documentações estão em dia?', key: 'relatoriosEmDia' },
-                                                            { q: '🎓 Há necessidade de treinamento ou capacitação?', key: 'necessidadeTreinamento' }
-                                                        ].map((item, index) =>
-                                                            h('div', { key: `staff_${index}`, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px' } },
-                                                                h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.2rem' } }, 
-                                                                    `${index + 1}. ${item.q}`
-                                                                ),
-                                                                h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                    ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                        const labels = { 
-                                                                            excelente: '🏆 Excelente', 
-                                                                            bom: '✅ Bom', 
-                                                                            regular: '⚠️ Regular', 
-                                                                            ruim: '❌ Ruim',
-                                                                            nao_verificado: '❓ Não Verificado'
-                                                                        };
-                                                                        return h('label', { 
-                                                                            key: opcao,
-                                                                            style: { 
-                                                                                display: 'flex', 
-                                                                                alignItems: 'center',
-                                                                                gap: '12px',
-                                                                                cursor: 'pointer',
-                                                                                fontSize: '1rem',
-                                                                                padding: '14px 20px',
-                                                                                borderRadius: '12px',
-                                                                                background: checklistFormState[`staff_${item.key}`] === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                                border: '3px solid ' + (checklistFormState[`staff_${item.key}`] === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                                fontWeight: '600'
-                                                                            }
-                                                                        },
+                                                // Perguntas do Checklist
+                                                h('div', { style: { background: 'linear-gradient(135deg, #10b981, #059669)', padding: '32px', borderRadius: '16px', color: 'white' } },
+                                                    h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '24px' } }, 
+                                                        `📋 PERGUNTAS DO CHECKLIST ${currentChecklistState.tipo === 'staff' ? 'STAFF' : 'ROLEPLAY'}`
+                                                    ),
+                                                    h('p', { style: { fontSize: '1rem', marginBottom: '24px', opacity: 0.9 } }, '✅ Responda SIM/NÃO para cada pergunta'),
+                                                    h('div', { style: { display: 'grid', gap: '16px' } },
+                                                        (() => {
+                                                            let perguntasChecklist = [];
+                                                            
+                                                            if (currentChecklistState.tipo === 'staff') {
+                                                                perguntasChecklist = [
+                                                                    'A equipe possui organização adequada?',
+                                                                    'Os membros estão ativos e participativos?',
+                                                                    'As responsabilidades são bem distribuídas?',
+                                                                    'Há comunicação eficiente na equipe?',
+                                                                    'Os prazos são cumpridos adequadamente?',
+                                                                    'A liderança está presente e atuante?',
+                                                                    'Há colaboração entre diferentes setores?',
+                                                                    'As metas estabelecidas estão sendo alcançadas?'
+                                                                ];
+                                                            } else {
+                                                                // Perguntas baseadas no setor RP
+                                                                if (checklistFormState.setor === 'Polícia') {
+                                                                    perguntasChecklist = [
+                                                                        'Os policiais estão seguindo protocolos?',
+                                                                        'As abordagens são realistas?',
+                                                                        'Há cooperação entre subsetores?',
+                                                                        'Os equipamentos são bem utilizados?',
+                                                                        'O RP policial está adequado?'
+                                                                    ];
+                                                                } else if (checklistFormState.setor === 'Hospital') {
+                                                                    perguntasChecklist = [
+                                                                        'Os atendimentos são realistas?',
+                                                                        'Os preços estão adequados?',
+                                                                        'Há profissionais suficientes?',
+                                                                        'O RP médico está bem executado?',
+                                                                        'Os protocolos hospitalares são seguidos?'
+                                                                    ];
+                                                                } else {
+                                                                    // Perguntas gerais para outros setores RP
+                                                                    perguntasChecklist = [
+                                                                        'O setor está funcionando adequadamente?',
+                                                                        'Os membros estão ativos e engajados?',
+                                                                        'Há qualidade no roleplay?',
+                                                                        'As responsabilidades são bem cumpridas?',
+                                                                        'O setor contribui positivamente para a cidade?'
+                                                                    ];
+                                                                }
+                                                            }
+
+                                                            return perguntasChecklist.map((pergunta, index) => 
+                                                                h('div', { key: `checklist_${index}`, style: { background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '8px' } },
+                                                                    h('p', { style: { fontSize: '1rem', marginBottom: '12px', fontWeight: '600' } }, `${index + 1}. ${pergunta}`),
+                                                                    h('div', { style: { display: 'flex', gap: '16px' } },
+                                                                        h('label', { style: { display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' } },
                                                                             h('input', {
                                                                                 type: 'radio',
-                                                                                name: `staff_${item.key}`,
-                                                                                value: opcao,
-                                                                                checked: checklistFormState[`staff_${item.key}`] === opcao,
-                                                                                onChange: (e) => setChecklistFormState({...checklistFormState, [`staff_${item.key}`]: e.target.value}),
-                                                                                style: { margin: 0, transform: 'scale(1.4)' }
-                                                                            }),
-                                                                            h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                        );
-                                                                    })
-                                                                ),
-                                                                h('textarea', {
-                                                                    value: checklistFormState[`obs_staff_${item.key}`] || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, [`obs_staff_${item.key}`]: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                        borderRadius: '12px',
-                                                                        fontSize: '1rem',
-                                                                        background: 'rgba(255, 255, 255, 0.2)',
-                                                                        color: 'white',
-                                                                        fontFamily: 'inherit',
-                                                                        resize: 'vertical',
-                                                                        minHeight: '100px'
-                                                                    },
-                                                                    placeholder: `Observações detalhadas sobre: ${item.q}...`
-                                                                })
-                                                            )
-                                                        )
-                                                    )
-                                                ),
-
-                                                // Seção de perguntas específicas por tipo
-                                                currentChecklistState.tipo === 'staff' ? (
-                                                    // Staff Checklist - Perguntas específicas COMPLETAS
-                                                    h('div', { style: { background: 'linear-gradient(135deg, #10b981, #059669)', padding: '32px', borderRadius: '16px', color: 'white' } },
-                                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '24px' } }, '📊 ANÁLISE COMPLETA DA EQUIPE STAFF'),
-                                                        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' } },
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '👥 Total de Pessoas na Equipe'),
-                                                                h('input', {
-                                                                    type: 'number',
-                                                                    min: '0',
-                                                                    value: checklistFormState.totalPessoas || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, totalPessoas: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600',
-                                                                        textAlign: 'center'
-                                                                    }
-                                                                })
-                                                            ),
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '✅ Pessoas Ativas'),
-                                                                h('input', {
-                                                                    type: 'number',
-                                                                    min: '0',
-                                                                    value: checklistFormState.pessoasAtivas || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, pessoasAtivas: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600',
-                                                                        textAlign: 'center'
-                                                                    }
-                                                                })
-                                                            ),
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '💬 Pessoas no Discord'),
-                                                                h('input', {
-                                                                    type: 'number',
-                                                                    min: '0',
-                                                                    value: checklistFormState.pessoasDiscord || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, pessoasDiscord: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600',
-                                                                        textAlign: 'center'
-                                                                    }
-                                                                })
-                                                            ),
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '🎮 Pessoas no Jogo Atendendo'),
-                                                                h('input', {
-                                                                    type: 'number',
-                                                                    min: '0',
-                                                                    value: checklistFormState.pessoasJogo || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, pessoasJogo: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600',
-                                                                        textAlign: 'center'
-                                                                    }
-                                                                })
-                                                            ),
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '🎯 Metas Batidas até Hoje'),
-                                                                h('input', {
-                                                                    type: 'number',
-                                                                    min: '0',
-                                                                    value: checklistFormState.metasBatidas || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, metasBatidas: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600',
-                                                                        textAlign: 'center'
-                                                                    }
-                                                                })
-                                                            ),
-                                                            h('div', null,
-                                                                h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '8px' } }, '⭐ Desempenho Geral da Equipe'),
-                                                                h('select', {
-                                                                    value: checklistFormState.desempenho || '',
-                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, desempenho: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid white',
-                                                                        borderRadius: '10px',
-                                                                        fontSize: '1.1rem',
-                                                                        background: 'white',
-                                                                        color: '#1f2937',
-                                                                        fontWeight: '600'
-                                                                    }
-                                                                },
-                                                                    h('option', { value: '' }, 'Avalie o desempenho...'),
-                                                                    h('option', { value: 'ruim' }, '❌ Ruim'),
-                                                                    h('option', { value: 'regular' }, '⚠️ Regular'),
-                                                                    h('option', { value: 'bom' }, '✅ Bom'),
-                                                                    h('option', { value: 'excelente' }, '🏆 Excelente')
-                                                                )
-                                                            )
-                                                        ),
-                                                        // Seção adicional para observações gerais da equipe
-                                                        h('div', { style: { marginTop: '32px', padding: '24px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px' } },
-                                                            h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '12px', fontSize: '1.2rem' } }, '📝 Observações Gerais da Equipe'),
-                                                            h('textarea', {
-                                                                value: checklistFormState.observacoesGerais || '',
-                                                                onChange: (e) => setChecklistFormState({...checklistFormState, observacoesGerais: e.target.value}),
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding: '16px',
-                                                                    border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                    borderRadius: '12px',
-                                                                    fontSize: '1rem',
-                                                                    background: 'rgba(255, 255, 255, 0.2)',
-                                                                    color: 'white',
-                                                                    fontFamily: 'inherit',
-                                                                    resize: 'vertical',
-                                                                    minHeight: '120px'
-                                                                },
-                                                                placeholder: 'Descreva o estado geral da equipe, pontos fortes, áreas de melhoria, problemas identificados...'
-                                                            })
-                                                        )
-                                                    )
-                                                ) : (
-                                                    // RP Checklist - Perguntas específicas COMPLETAS
-                                                    h('div', { style: { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', padding: '32px', borderRadius: '16px', color: 'white' } },
-                                                        h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '24px' } }, '🎭 ANÁLISE COMPLETA DO SETOR ROLEPLAY'),
-                                                        h('div', { style: { display: 'grid', gap: '28px' } },
-                                                            [
-                                                                '🏢 A estrutura física do setor está funcional e adequada?',
-                                                                '👥 A equipe está ativa e presente regularmente?',
-                                                                '🎯 O uso das funções específicas do RP está sendo feito corretamente?',
-                                                                '📞 A comunicação externa (com outros setores) está funcionando bem?',
-                                                                '📋 Os registros e documentos estão sendo atualizados regularmente?',
-                                                                '⏰ Os horários de funcionamento estão sendo respeitados?',
-                                                                '💰 As transações financeiras estão sendo registradas adequadamente?',
-                                                                '🎭 O roleplay está sendo executado com qualidade e realismo?',
-                                                                '📊 Os funcionários estão cumprindo suas metas diárias/semanais?',
-                                                                '🔄 Houve melhorias implementadas desde a última auditoria?',
-                                                                '⚠️ Existem problemas ou conflitos internos na equipe?',
-                                                                '📈 O setor está gerando lucro/resultados esperados?',
-                                                                '🎯 As diretrizes da cidade estão sendo seguidas corretamente?',
-                                                                '🤝 A colaboração com outros setores está funcionando bem?',
-                                                                '🔧 Há necessidade de treinamento ou capacitação da equipe?'
-                                                            ].map((pergunta, index) =>
-                                                                h('div', { key: index, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px', border: '2px solid rgba(255, 255, 255, 0.3)' } },
-                                                                    h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '16px', fontSize: '1.2rem', lineHeight: '1.4' } }, 
-                                                                        `${index + 1}. ${pergunta}`
-                                                                    ),
-                                                                    h('div', { style: { display: 'flex', gap: '20px', marginBottom: '16px', flexWrap: 'wrap' } },
-                                                                        [
-                                                                            { value: 'excelente', label: '🏆 Excelente', color: '#10b981' },
-                                                                            { value: 'bom', label: '✅ Bom', color: '#059669' },
-                                                                            { value: 'regular', label: '⚠️ Regular', color: '#f59e0b' },
-                                                                            { value: 'ruim', label: '❌ Ruim', color: '#dc2626' },
-                                                                            { value: 'nao_verificado', label: '❓ Não Verificado', color: '#6b7280' }
-                                                                        ].map(opcao => 
-                                                                            h('label', { 
-                                                                                key: opcao.value,
-                                                                                style: { 
-                                                                                    display: 'flex', 
-                                                                                    alignItems: 'center',
-                                                                                    gap: '10px',
-                                                                                    cursor: 'pointer',
-                                                                                    fontSize: '1rem',
-                                                                                    padding: '12px 18px',
-                                                                                    borderRadius: '12px',
-                                                                                    background: checklistFormState[`pergunta_${index}`] === opcao.value ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.1)',
-                                                                                    border: '3px solid ' + (checklistFormState[`pergunta_${index}`] === opcao.value ? 'white' : 'rgba(255, 255, 255, 0.3)'),
-                                                                                    fontWeight: '600',
-                                                                                    transition: 'all 0.2s',
-                                                                                    minWidth: '140px'
-                                                                                }
-                                                                            },
-                                                                                h('input', {
-                                                                                    type: 'radio',
-                                                                                    name: `pergunta_${index}`,
-                                                                                    value: opcao.value,
-                                                                                    checked: checklistFormState[`pergunta_${index}`] === opcao.value,
-                                                                                    onChange: (e) => setChecklistFormState({...checklistFormState, [`pergunta_${index}`]: e.target.value}),
-                                                                                    style: { margin: 0, transform: 'scale(1.3)' }
+                                                                                name: `checklist_pergunta_${index}`,
+                                                                                value: 'sim',
+                                                                                checked: checklistFormState[`checklist_pergunta_${index}`] === 'sim',
+                                                                                onChange: (e) => setChecklistFormState({
+                                                                                    ...checklistFormState,
+                                                                                    [`checklist_pergunta_${index}`]: e.target.value
                                                                                 }),
-                                                                                h('span', { style: { color: 'white', fontWeight: '700' } }, opcao.label)
-                                                                            )
+                                                                                style: { marginRight: '4px' }
+                                                                            }),
+                                                                            '✅ SIM'
+                                                                        ),
+                                                                        h('label', { style: { display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' } },
+                                                                            h('input', {
+                                                                                type: 'radio',
+                                                                                name: `checklist_pergunta_${index}`,
+                                                                                value: 'nao',
+                                                                                checked: checklistFormState[`checklist_pergunta_${index}`] === 'nao',
+                                                                                onChange: (e) => setChecklistFormState({
+                                                                                    ...checklistFormState,
+                                                                                    [`checklist_pergunta_${index}`]: e.target.value
+                                                                                }),
+                                                                                style: { marginRight: '4px' }
+                                                                            }),
+                                                                            '❌ NÃO'
                                                                         )
-                                                                    ),
-                                                                    h('textarea', {
-                                                                        value: checklistFormState[`obs_${index}`] || '',
-                                                                        onChange: (e) => setChecklistFormState({...checklistFormState, [`obs_${index}`]: e.target.value}),
-                                                                        style: {
-                                                                            width: '100%',
-                                                                            padding: '16px',
-                                                                            border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                            borderRadius: '12px',
-                                                                            fontSize: '1rem',
-                                                                            background: 'rgba(255, 255, 255, 0.2)',
-                                                                            color: 'white',
-                                                                            fontFamily: 'inherit',
-                                                                            resize: 'vertical',
-                                                                            minHeight: '100px',
-                                                                            lineHeight: '1.5'
-                                                                        },
-                                                                        placeholder: `Observações detalhadas sobre: ${pergunta.replace(/🔸|🔹|📋|👥|🎯|📞|⏰|💰|🎭/g, '').trim()}...`
-                                                                    })
+                                                                    )
                                                                 )
-                                                            )
-                                                        ),
-                                                        // Seção final para resumo geral do setor RP
-                                                        h('div', { style: { marginTop: '32px', padding: '28px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '20px', border: '3px solid rgba(255, 255, 255, 0.4)' } },
-                                                            h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '16px', fontSize: '1.4rem' } }, '📋 RESUMO GERAL DO SETOR'),
-                                                            h('textarea', {
-                                                                value: checklistFormState.resumoGeralSetor || '',
-                                                                onChange: (e) => setChecklistFormState({...checklistFormState, resumoGeralSetor: e.target.value}),
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding: '20px',
-                                                                    border: '3px solid rgba(255, 255, 255, 0.5)',
-                                                                    borderRadius: '16px',
-                                                                    fontSize: '1.1rem',
-                                                                    background: 'rgba(255, 255, 255, 0.25)',
-                                                                    color: 'white',
-                                                                    fontFamily: 'inherit',
-                                                                    resize: 'vertical',
-                                                                    minHeight: '150px',
-                                                                    lineHeight: '1.6'
-                                                                },
-                                                                placeholder: 'Faça um resumo completo do estado atual do setor: pontos fortes, problemas encontrados, sugestões de melhoria, impressão geral...'
-                                                            })
-                                                        )
+                                                            );
+                                                        })()
                                                     )
                                                 ),
 
@@ -1195,12 +895,46 @@
                                                     )
                                                 ),
 
+                                                // SEÇÃO DE NOTA FINAL
+                                                h('div', { style: { background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', padding: '32px', borderRadius: '16px', color: 'white' } },
+                                                    h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' } }, '📊 NOTA FINAL DO CHECKLIST'),
+                                                    h('div', { style: { maxWidth: '400px', margin: '0 auto' } },
+                                                        h('p', { style: { fontSize: '1.1rem', marginBottom: '16px', textAlign: 'center', opacity: 0.9 } }, 
+                                                            '⭐ Dê uma nota de 0 a 50 para este checklist baseado na sua análise geral'
+                                                        ),
+                                                        h('input', {
+                                                            type: 'number',
+                                                            min: '0',
+                                                            max: '50',
+                                                            step: '0.1',
+                                                            value: checklistFormState.notaFinal || '',
+                                                            onChange: (e) => setChecklistFormState({...checklistFormState, notaFinal: e.target.value}),
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                border: '3px solid white',
+                                                                borderRadius: '12px',
+                                                                fontSize: '1.5rem',
+                                                                background: 'white',
+                                                                color: '#1f2937',
+                                                                fontWeight: '700',
+                                                                textAlign: 'center'
+                                                            },
+                                                            placeholder: 'Ex: 42.5'
+                                                        }),
+                                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.9rem', opacity: 0.8 } },
+                                                            h('span', null, 'Min: 0'),
+                                                            h('span', null, 'Máx: 50')
+                                                        )
+                                                    )
+                                                ),
+
                                                 // Botões de ação
                                                 h('div', { style: { display: 'flex', justifyContent: 'center', gap: '24px', padding: '32px' } },
                                                     h('button', {
                                                         onClick: saveChecklistData,
                                                         style: {
-                                                            background: Object.values(currentChecklistState.confirmacoesPainel).every(val => val !== '') ? '#16a34a' : '#f59e0b',
+                                                            background: (Object.values(currentChecklistState.confirmacoesPainel).every(val => val !== '') && checklistFormState.notaFinal) ? '#16a34a' : '#f59e0b',
                                                             color: 'white',
                                                             padding: '18px 40px',
                                                             border: 'none',
@@ -1210,8 +944,8 @@
                                                             fontSize: '1.2rem'
                                                         }
                                                     },
-                                                        Object.values(currentChecklistState.confirmacoesPainel).every(val => val !== '') ?
-                                                            '📤 ENVIAR PARA APROVAÇÃO' : '✅ CONFIRMAR E ENVIAR'
+                                                        (Object.values(currentChecklistState.confirmacoesPainel).every(val => val !== '') && checklistFormState.notaFinal) ?
+                                                            '📤 ENVIAR PARA APROVAÇÃO' : '✅ PREENCHA TUDO'
                                                     )
                                                 )
                                             )
@@ -1265,7 +999,7 @@
                                     // Lista de checklists existentes
                                     h('div', { style: { background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' } },
                                         h('h3', { style: { fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' } }, 'Meus Checklists'),
-                                        pendingUsers.length > 0 && h('div', { style: { display: 'grid', gap: '16px' } },
+                                        checklists.filter(c => c.autorId === currentUser.id).length > 0 ? h('div', { style: { display: 'grid', gap: '16px' } },
                                             checklists
                                                 .filter(c => c.autorId === currentUser.id)
                                                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -1337,6 +1071,10 @@
                                                         )
                                                     )
                                                 )
+                                        ) : h('div', { style: { textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #d1d5db' } },
+                                            h('div', { style: { fontSize: '4rem', marginBottom: '16px' } }, '📋'),
+                                            h('p', { style: { fontSize: '1.2rem', fontWeight: 'bold', color: '#6b7280', marginBottom: '8px' } }, 'Nenhum checklist criado ainda'),
+                                            h('p', { style: { fontSize: '1rem', color: '#9ca3af' } }, 'Crie seu primeiro checklist usando os botões acima')
                                         )
                                     )
                                 )
@@ -1344,7 +1082,7 @@
                         );
                     };
 
-                    // Página de Auditoria - SISTEMA ULTRA COMPLETO RESTAURADO
+                    // Página de Auditoria - SISTEMA ULTRA COMPLETO RESTAURADO COM TODAS AS PERGUNTAS
                     const AuditoriaPage = () => {
                         const [currentAuditoriaState, setCurrentAuditoriaState] = useState(null);
                         const [auditoriaFormState, setAuditoriaFormState] = useState({});
@@ -1373,6 +1111,18 @@
                                 return;
                             }
 
+                            // Validar nota final
+                            if (!auditoriaFormState.notaFinal) {
+                                alert('⚠️ Digite a nota final da auditoria (0 a 100)!');
+                                return;
+                            }
+
+                            const validacao = validarNota(auditoriaFormState.notaFinal, 'auditoria');
+                            if (!validacao.valida) {
+                                alert(`⚠️ ${validacao.erro}!`);
+                                return;
+                            }
+
                             // Calcular duração automaticamente
                             const inicioTimestamp = new Date(currentAuditoriaState.createdAt);
                             const fimTimestamp = new Date();
@@ -1382,6 +1132,7 @@
                             const updatedAuditoria = {
                                 ...currentAuditoriaState,
                                 ...auditoriaFormState,
+                                notaFinal: validacao.nota,
                                 updatedAt: fimTimestamp.toISOString(),
                                 status: 'aguardando_aprovacao',
                                 duracaoAutomatica: duracaoCalculada,
@@ -1399,7 +1150,7 @@
 
                             setCurrentAuditoriaState(null);
                             setAuditoriaFormState({});
-                            alert(`✅ AUDITORIA COMPLETA enviada para aprovação!\n⏱️ Duração total: ${updatedAuditoria.duracaoAutomatica}`);
+                            alert(`✅ AUDITORIA COMPLETA enviada para aprovação!\n📊 Nota final: ${validacao.nota}/100 pontos\n⏱️ Duração total: ${updatedAuditoria.duracaoAutomatica}`);
                         };
 
                         if (currentAuditoriaState) {
@@ -1458,7 +1209,7 @@
                                                                 ).map(item => h('option', { key: item, value: item }, item))
                                                             )
                                                         ),
-                                                        // Campo subsetor para Polícia na Auditoria - IMPLEMENTADO!
+                                                        // Campo subsetor para Polícia na Auditoria
                                                         auditoriaFormState.setor === 'Polícia' && h('div', null,
                                                             h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '10px', fontSize: '1.2rem' } }, '🚔 Subsetor da Polícia'),
                                                             h('select', {
@@ -1502,698 +1253,208 @@
                                                                 h('option', { value: 'tarde' }, '☀️ Tarde (14:00 - 22:00)'),
                                                                 h('option', { value: 'noite' }, '🌙 Noite (22:00 - 06:00)')
                                                             )
-                                                        ),
-                                                        h('div', null,
-                                                            h('label', { style: { display: 'block', fontWeight: '700', color: 'white', marginBottom: '10px', fontSize: '1.2rem' } }, '⏰ Duração'),
-                                                            h('div', {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding: '16px',
-                                                                    border: '3px solid white',
-                                                                    borderRadius: '10px',
-                                                                    fontSize: '1.1rem',
-                                                                    background: 'white',
-                                                                    color: '#1f2937',
-                                                                    fontWeight: '600',
-                                                                    textAlign: 'center'
-                                                                }
-                                                            }, '🤖 Calculado Automaticamente'),
-                                                            h('p', { style: { fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '8px', textAlign: 'center', fontStyle: 'italic' } }, 
-                                                                '⚡ Sistema calcula baseado nos timestamps'
-                                                            )
                                                         )
                                                     )
                                                 ),
 
-                                                // Seção 2: Perguntas gerais para RP (TODAS as auditorias RP)
-                                                currentAuditoriaState.tipo === 'roleplay' && h('div', { style: { background: 'linear-gradient(135deg, #10b981, #059669)', padding: '32px', borderRadius: '16px', color: 'white' } },
-                                                    h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '24px' } }, '🎭 PERGUNTAS GERAIS - AUDITORIA ROLEPLAY'),
-                                                    h('div', { style: { display: 'grid', gap: '28px' } },
+                                                // Seção 2: Perguntas Gerais (para todas as organizações)
+                                                h('div', { style: { background: 'linear-gradient(135deg, #10b981, #059669)', padding: '32px', borderRadius: '20px', color: 'white' } },
+                                                    h('h3', { style: { fontSize: '2rem', fontWeight: 'bold', marginBottom: '24px' } }, '📋 PERGUNTAS GERAIS'),
+                                                    h('p', { style: { fontSize: '1.1rem', marginBottom: '24px', opacity: 0.9 } }, '✅ Responda SIM/NÃO para cada pergunta'),
+                                                    h('div', { style: { display: 'grid', gap: '20px' } },
                                                         [
-                                                            '🏢 A estrutura física do setor está funcional e adequada?',
-                                                            '👥 A equipe está ativa e presente regularmente?', 
-                                                            '🎯 O uso das funções específicas do RP está sendo feito corretamente?',
-                                                            '📞 A comunicação externa (com outros setores) está funcionando bem?',
-                                                            '📋 Os registros e documentos estão sendo atualizados regularmente?',
-                                                            '⏰ Os horários de funcionamento estão sendo respeitados?',
-                                                            '💰 As transações financeiras estão sendo registradas adequadamente?',
-                                                            '🎭 O roleplay está sendo executado com qualidade e realismo?'
-                                                        ].map((pergunta, index) =>
-                                                            h('div', { key: `geral_${index}`, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px' } },
-                                                                h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.2rem' } }, 
-                                                                    `${index + 1}. ${pergunta}`
-                                                                ),
-                                                                h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                    ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                        const labels = { 
-                                                                            excelente: '🏆 Excelente', 
-                                                                            bom: '✅ Bom', 
-                                                                            regular: '⚠️ Regular', 
-                                                                            ruim: '❌ Ruim',
-                                                                            nao_verificado: '❓ Não Verificado'
-                                                                        };
-                                                                        return h('label', { 
-                                                                            key: opcao,
-                                                                            style: { 
-                                                                                display: 'flex', 
-                                                                                alignItems: 'center',
-                                                                                gap: '12px',
-                                                                                cursor: 'pointer',
-                                                                                fontSize: '1rem',
-                                                                                padding: '14px 20px',
-                                                                                borderRadius: '12px',
-                                                                                background: auditoriaFormState[`geral_${index}`] === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                                border: '3px solid ' + (auditoriaFormState[`geral_${index}`] === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                                fontWeight: '600'
-                                                                            }
-                                                                        },
-                                                                            h('input', {
-                                                                                type: 'radio',
-                                                                                name: `geral_${index}`,
-                                                                                value: opcao,
-                                                                                checked: auditoriaFormState[`geral_${index}`] === opcao,
-                                                                                onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`geral_${index}`]: e.target.value}),
-                                                                                style: { margin: 0, transform: 'scale(1.4)' }
-                                                                            }),
-                                                                            h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                        );
-                                                                    })
-                                                                ),
-                                                                h('textarea', {
-                                                                    value: auditoriaFormState[`obs_geral_${index}`] || '',
-                                                                    onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`obs_geral_${index}`]: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                        borderRadius: '12px',
-                                                                        fontSize: '1rem',
-                                                                        background: 'rgba(255, 255, 255, 0.2)',
-                                                                        color: 'white',
-                                                                        fontFamily: 'inherit',
-                                                                        resize: 'vertical',
-                                                                        minHeight: '100px'
-                                                                    },
-                                                                    placeholder: `Observações detalhadas sobre: ${pergunta}...`
-                                                                })
-                                                            )
-                                                        )
-                                                    )
-                                                ),
-
-                                                // Seção para auditoria Staff - Perguntas gerais
-                                                currentAuditoriaState.tipo === 'staff' && (() => {
-                                                    const equipeSelecionada = auditoriaFormState.setor;
-                                                    let perguntasEspecificas = [];
-                                                    let tituloSecaoStaff = '';
-                                                    let corSecaoStaff = '#8b5cf6';
-
-                                                    if (equipeSelecionada === 'Comercial') {
-                                                        tituloSecaoStaff = '💼 AUDITORIA STAFF COMERCIAL - PERGUNTAS ESPECÍFICAS';
-                                                        corSecaoStaff = '#059669';
-                                                        perguntasEspecificas = [
-                                                            { q: 'A equipe tem metas claras de venda definidas semanal ou mensalmente?', key: 'metasVendaDefinidas' },
-                                                            { q: 'Há acompanhamento dos atendimentos realizados por cada membro?', key: 'acompanhamentoAtendimentos' },
-                                                            { q: 'Existe planilha ou sistema com registro das vendas?', key: 'sistemaRegistroVendas' },
-                                                            { q: 'Os produtos ou serviços estão sendo divulgados corretamente dentro dos canais da cidade?', key: 'divulgacaoCorreta' },
-                                                            { q: 'A equipe conhece bem os serviços da cidade e sabe argumentar com os cidadãos?', key: 'conhecimentoServicos' },
-                                                            { q: 'Existe supervisão ativa para evitar promessas falsas ou condutas abusivas?', key: 'supervisaoAtiva' },
-                                                            { q: 'Foi feita alguma capacitação recente de abordagem ou técnica de venda?', key: 'capacitacaoRecente' }
-                                                        ];
-                                                    } else if (equipeSelecionada === 'Social Media') {
-                                                        tituloSecaoStaff = '📢 AUDITORIA STAFF SOCIAL MEDIA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecaoStaff = '#f59e0b';
-                                                        perguntasEspecificas = [
-                                                            { q: 'Todos os membros da SM estão utilizando as ferramentas corretas (ex: painel de clipping, agendamento de postagens, etc)?', key: 'ferramentasCorretas' },
-                                                            { q: 'Estão sendo entregues conteúdos periódicos e alinhados com os acontecimentos da cidade?', key: 'conteudosPeriodicosAlinhados' },
-                                                            { q: 'As artes e os textos seguem a identidade visual da cidade Ilusion?', key: 'identidadeVisual' },
-                                                            { q: 'A equipe está cobrindo eventos importantes e registrando adequadamente (fotos, vídeos, lives)?', key: 'coberturaEventos' },
-                                                            { q: 'As contas oficiais estão sendo monitoradas com frequência?', key: 'monitoramentoContas' },
-                                                            { q: 'Os feedbacks da população estão sendo coletados ou respondidos?', key: 'feedbackPopulacao' },
-                                                            { q: 'Existe uma divisão clara entre quem cuida de texto, imagem, vídeo e postagem?', key: 'divisaoFuncoes' }
-                                                        ];
-                                                    } else if (equipeSelecionada === 'Ticketing') {
-                                                        tituloSecaoStaff = '🎟️ AUDITORIA STAFF TICKETING - PERGUNTAS ESPECÍFICAS';
-                                                        corSecaoStaff = '#dc2626';
-                                                        perguntasEspecificas = [
-                                                            { q: 'O tempo médio de resposta está dentro do aceitável?', key: 'tempoRespostaAceitavel' },
-                                                            { q: 'Os tickets estão sendo respondidos com profissionalismo e clareza?', key: 'respostasProfissionais' },
-                                                            { q: 'Há alguém responsável por revisar tickets mais sensíveis (conflitos, denúncias)?', key: 'revisaoTicketsSensiveis' },
-                                                            { q: 'Existe sistema de triagem por tipo de ticket (RP, denúncia, dúvida, suporte técnico)?', key: 'sistemaTriagem' },
-                                                            { q: 'A equipe está utilizando o histórico dos tickets para evitar respostas duplicadas?', key: 'usoHistorico' },
-                                                            { q: 'Os membros estão atualizados quanto às normas da cidade antes de responder?', key: 'atualizacaoNormas' }
-                                                        ];
-                                                    } else if (equipeSelecionada === 'Eventos') {
-                                                        tituloSecaoStaff = '🎪 AUDITORIA STAFF EVENTOS - PERGUNTAS ESPECÍFICAS';
-                                                        corSecaoStaff = '#8b5cf6';
-                                                        perguntasEspecificas = [
-                                                            { q: 'A equipe está propondo eventos com frequência?', key: 'propostaEventosFrequencia' },
-                                                            { q: 'Os eventos estão sendo registrados no painel e no cronograma da cidade?', key: 'registroEventosPainel' },
-                                                            { q: 'Há divisão de funções entre organização, divulgação e execução?', key: 'divisaoFuncoesEventos' },
-                                                            { q: 'Existe controle de presença e de problemas nos eventos realizados?', key: 'controlePresencaProblemas' },
-                                                            { q: 'A equipe tem um responsável pela logística de apoio (ex: fechar ruas, chamar segurança)?', key: 'responsavelLogistica' },
-                                                            { q: 'Os eventos estão respeitando o tempo limite e as regras de convivência?', key: 'respeitoRegrasEventos' },
-                                                            { q: 'Estão fazendo relatórios pós-evento com avaliação e sugestões?', key: 'relatoriosPosEvento' }
-                                                        ];
-                                                    } else if (equipeSelecionada === 'Equipe Legal') {
-                                                        tituloSecaoStaff = '⚖️ AUDITORIA STAFF EQUIPE LEGAL - PERGUNTAS ESPECÍFICAS';
-                                                        corSecaoStaff = '#1f2937';
-                                                        perguntasEspecificas = [
-                                                            { q: 'Todos os membros têm conhecimento das regras específicas da cidade Ilusion?', key: 'conhecimentoRegrasEspecificas' },
-                                                            { q: 'As decisões legais (demissões, advertências, suspensões) estão sendo registradas corretamente?', key: 'registroDecisoesLegais' },
-                                                            { q: 'Há verificação dupla nas punições mais graves?', key: 'verificacaoDupla' },
-                                                            { q: 'A equipe está mantendo comunicação ativa com jurídico e presidência?', key: 'comunicacaoJuridicoPresidencia' },
-                                                            { q: 'Existem revisões regulares nos contratos ou documentos oficiais da cidade?', key: 'revisaoContratosDocumentos' },
-                                                            { q: 'O painel está sendo atualizado com frequência?', key: 'atualizacaoPainelLegal' },
-                                                            { q: 'Os membros estão sabendo lidar com conflitos internos de forma ética e imparcial?', key: 'gerenciamentoConflitos' }
-                                                        ];
-                                                    }
-
-                                                    if (perguntasEspecificas.length > 0) {
-                                                        return h('div', { style: { padding: '32px', background: `linear-gradient(135deg, ${corSecaoStaff}55, ${corSecaoStaff}44)`, borderRadius: '24px', border: `4px solid ${corSecaoStaff}`, marginTop: '32px' } },
-                                                            h('h4', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '28px', color: corSecaoStaff } }, tituloSecaoStaff),
-                                                            h('div', { style: { display: 'grid', gap: '28px' } },
-                                                                perguntasEspecificas.map((item, index) => 
-                                                                    h('div', { key: `staff_especifica_${index}`, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '16px' } },
-                                                                        h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.3rem' } }, 
-                                                                            `${index + 1}. ${item.q}`
-                                                                        ),
-                                                                        h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                            ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                                const labels = { 
-                                                                                    excelente: '🏆 Excelente', 
-                                                                                    bom: '✅ Bom', 
-                                                                                    regular: '⚠️ Regular', 
-                                                                                    ruim: '❌ Ruim',
-                                                                                    nao_verificado: '❓ Não Verificado'
-                                                                                };
-                                                                                return h('label', { 
-                                                                                    key: opcao,
-                                                                                    style: { 
-                                                                                        display: 'flex', 
-                                                                                        alignItems: 'center',
-                                                                                        gap: '12px',
-                                                                                        cursor: 'pointer',
-                                                                                        fontSize: '1rem',
-                                                                                        padding: '14px 20px',
-                                                                                        borderRadius: '12px',
-                                                                                        background: auditoriaFormState[`staff_especifica_${item.key}`] === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                                        border: '3px solid ' + (auditoriaFormState[`staff_especifica_${item.key}`] === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                                        fontWeight: '600'
-                                                                                    }
-                                                                                },
-                                                                                    h('input', {
-                                                                                        type: 'radio',
-                                                                                        name: `staff_especifica_${item.key}`,
-                                                                                        value: opcao,
-                                                                                        checked: auditoriaFormState[`staff_especifica_${item.key}`] === opcao,
-                                                                                        onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`staff_especifica_${item.key}`]: e.target.value}),
-                                                                                        style: { margin: 0, transform: 'scale(1.4)' }
-                                                                                    }),
-                                                                                    h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                                );
-                                                                            })
-                                                                        ),
-                                                                        h('textarea', {
-                                                                            value: auditoriaFormState[`obs_staff_${item.key}`] || '',
-                                                                            onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`obs_staff_${item.key}`]: e.target.value}),
-                                                                            style: {
-                                                                                width: '100%',
-                                                                                padding: '16px',
-                                                                                border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                                borderRadius: '12px',
-                                                                                fontSize: '1rem',
-                                                                                background: 'rgba(255, 255, 255, 0.2)',
-                                                                                color: 'white',
-                                                                                fontFamily: 'inherit',
-                                                                                resize: 'vertical',
-                                                                                minHeight: '100px'
-                                                                            },
-                                                                            placeholder: 'Observações específicas sobre este aspecto...'
-                                                                        })
-                                                                    )
-                                                                )
-                                                            )
-                                                        );
-                                                    } else {
-                                                        return h('div', { style: { padding: '28px', background: 'rgba(156, 163, 175, 0.2)', borderRadius: '20px', textAlign: 'center', marginTop: '32px' } },
-                                                            h('p', { style: { color: 'rgba(255, 255, 255, 0.8)', fontSize: '1.2rem', fontWeight: '600' } }, 
-                                                                `📰 Selecione "Comercial", "Social Media", "Ticketing", "Eventos" ou "Equipe Legal" para ver perguntas específicas`
-                                                            )
-                                                        );
-                                                    }
-                                                })(),
-
-                                                // Seção para auditoria Staff - Perguntas gerais
-                                                currentAuditoriaState.tipo === 'staff' && h('div', { style: { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', padding: '32px', borderRadius: '16px', color: 'white' } },
-                                                    h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '24px' } }, '👥 PERGUNTAS GERAIS - AUDITORIA STAFF'),
-                                                    h('div', { style: { display: 'grid', gap: '28px' } },
-                                                        [
-                                                            '🏢 A estrutura organizacional da equipe está bem definida?',
-                                                            '⚡ Os membros respondem rapidamente aos chamados/tickets?',
-                                                            '📋 Existe cumprimento das normas internas estabelecidas?',
-                                                            '🎯 As metas da equipe estão sendo atingidas regularmente?',
-                                                            '🤝 Há boa comunicação e colaboração entre os membros?',
-                                                            '🔄 A equipe se adapta bem às mudanças e atualizações?',
-                                                            '📊 Os relatórios e documentações estão em dia?',
-                                                            '🎓 Há necessidade de treinamento ou capacitação?'
-                                                        ].map((pergunta, index) =>
-                                                            h('div', { key: `staff_geral_${index}`, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px' } },
-                                                                h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.2rem' } }, 
-                                                                    `${index + 1}. ${pergunta}`
-                                                                ),
-                                                                h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                    ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                        const labels = { 
-                                                                            excelente: '🏆 Excelente', 
-                                                                            bom: '✅ Bom', 
-                                                                            regular: '⚠️ Regular', 
-                                                                            ruim: '❌ Ruim',
-                                                                            nao_verificado: '❓ Não Verificado'
-                                                                        };
-                                                                        return h('label', { 
-                                                                            key: opcao,
-                                                                            style: { 
-                                                                                display: 'flex', 
-                                                                                alignItems: 'center',
-                                                                                gap: '12px',
-                                                                                cursor: 'pointer',
-                                                                                fontSize: '1rem',
-                                                                                padding: '14px 20px',
-                                                                                borderRadius: '12px',
-                                                                                background: auditoriaFormState[`staff_geral_${index}`] === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                                border: '3px solid ' + (auditoriaFormState[`staff_geral_${index}`] === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                                fontWeight: '600'
-                                                                            }
-                                                                        },
-                                                                            h('input', {
-                                                                                type: 'radio',
-                                                                                name: `staff_geral_${index}`,
-                                                                                value: opcao,
-                                                                                checked: auditoriaFormState[`staff_geral_${index}`] === opcao,
-                                                                                onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`staff_geral_${index}`]: e.target.value}),
-                                                                                style: { margin: 0, transform: 'scale(1.4)' }
-                                                                            }),
-                                                                            h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                        );
-                                                                    })
-                                                                ),
-                                                                h('textarea', {
-                                                                    value: auditoriaFormState[`obs_staff_geral_${index}`] || '',
-                                                                    onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`obs_staff_geral_${index}`]: e.target.value}),
-                                                                    style: {
-                                                                        width: '100%',
-                                                                        padding: '16px',
-                                                                        border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                        borderRadius: '12px',
-                                                                        fontSize: '1rem',
-                                                                        background: 'rgba(255, 255, 255, 0.2)',
-                                                                        color: 'white',
-                                                                        fontFamily: 'inherit',
-                                                                        resize: 'vertical',
-                                                                        minHeight: '100px'
-                                                                    },
-                                                                    placeholder: `Observações sobre: ${pergunta}...`
-                                                                })
-                                                            )
-                                                        )
-                                                    )
-                                                ),
-
-                                                // Seção 3: Perguntas específicas baseadas no setor
-                                                currentAuditoriaState.tipo === 'roleplay' && (() => {
-                                                    const setorSelecionado = auditoriaFormState.setor;
-                                                    let perguntasEspecificas = [];
-                                                    let tituloSecao = '';
-                                                    let corSecao = '#10b981';
-
-                                                    if (setorSelecionado === 'Hospital') {
-                                                        tituloSecao = '🏥 AUDITORIA RP HOSPITAL - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#dc2626';
-                                                        perguntasEspecificas = [
-                                                            // Bate-ponto e Atividade
-                                                            { q: '🕐 O bate-ponto está funcional para todos os cargos do hospital?', key: 'batePontoFuncionalHospital' },
-                                                            { q: '⏰ A equipe está batendo ponto corretamente nas entradas e saídas?', key: 'batePontoCorretoHospital' },
-                                                            { q: '👨‍⚕️ Há presença regular de médicos e enfermeiros nos horários de pico?', key: 'presencaRegularEquipe' },
-                                                            { q: '🌙 Existe plantão ativo no momento da auditoria?', key: 'plantaoAtivo' },
-                                                            
-                                                            // Equipe e Funções
-                                                            { q: '🩺 Médicos estão realizando atendimentos via /me e /do corretamente?', key: 'atendimentosMedicosCorretos' },
-                                                            { q: '👩‍⚕️ Enfermeiros estão cumprindo suas funções de apoio nos atendimentos?', key: 'funcaoEnfermeiros' },
-                                                            { q: '👔 Existe coordenação de cargos (diretor, chefe, equipe técnica)?', key: 'coordenacaoCargos' },
-                                                            
-                                                            // Painel e Sistema
-                                                            { q: '💻 O painel do hospital está funcionando normalmente?', key: 'painelHospitalFuncional' },
-                                                            { q: '📋 Estão sendo registradas as testadas médicas no painel?', key: 'testadasMedicasRegistradas' },
-                                                            { q: '🔬 Os exames e diagnósticos estão sendo feitos com base em situações de RP?', key: 'examesBaseadosRP' },
-                                                            { q: '🏥 As cirurgias e internações estão seguindo coerência e lógica?', key: 'cirurgiasCoerentes' },
-                                                            
-                                                            // Atendimento RP
-                                                            { q: '⏳ Os atendimentos estão respeitando tempo de espera e fila?', key: 'respeitoFilaAtendimento' },
-                                                            { q: '🚫 Está havendo abuso de prioridade (ex: "me atende primeiro porque sou staff")?', key: 'abusoPrioridadeAtendimento' },
-                                                            { q: '🎭 O hospital está atendendo com base em sintomas e histórias do RP (e não só comandos)?', key: 'atendimentoBaseadoRP' },
-                                                            { q: '🩸 Estão sendo feitos atendimentos de ferimentos por tiro, acidente, queda etc. com bom detalhamento?', key: 'atendimentosFerimentosDetalhados' },
-                                                            
-                                                            // Ocorrências e Situações Especiais
-                                                            { q: '🚨 O hospital atendeu emergências envolvendo polícia ou bombeiros nas últimas 48h?', key: 'emergenciasUltimas48h' },
-                                                            { q: '❌ Existem registros de recusas de atendimento sem justificativa RP?', key: 'recusasAtendimentoSemJustificativa' },
-                                                            { q: '🏃 Há presença de membros do hospital em cenas importantes da cidade (acidente, incêndio, tiroteio)?', key: 'presencaCenasImportantes' },
-                                                            { q: '🚑 A ambulância foi utilizada para resgate de forma correta nos últimos dias?', key: 'ambulanciaUtilizadaCorretamente' },
-                                                            
-                                                            // Observações Extras
-                                                            { q: '👨‍💼 Alguma mudança de liderança ocorreu recentemente?', key: 'mudancaLiderancaRecente' },
-                                                            { q: '🔄 Houve atualização no painel, sistema ou estrutura do hospital?', key: 'atualizacaoSistemaHospital' },
-                                                            { q: '💡 Existe sugestão de melhoria feita pela própria equipe?', key: 'sugestaoMelhoriaEquipe' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Jurídico') {
-                                                        tituloSecao = '⚖️ AUDITORIA RP JURÍDICO - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#1f2937';
-                                                        perguntasEspecificas = [
-                                                            { q: '👨‍💼 Os advogados estão cumprindo horários e disponibilidade para clientes?', key: 'advogadosHorarios' },
-                                                            { q: '📋 Os casos e processos estão sendo registrados adequadamente?', key: 'casosRegistrados' },
-                                                            { q: '⚖️ As defesas em tribunal estão sendo feitas com qualidade RP?', key: 'defesasQualidade' },
-                                                            { q: '💼 O escritório está organizado e funcional para atendimentos?', key: 'escritorioFuncional' },
-                                                            { q: '📞 A comunicação com delegados e juízes está adequada?', key: 'comunicacaoJudiciario' },
-                                                            { q: '💰 Os honorários estão sendo cobrados conforme tabela da cidade?', key: 'honorariosCorretos' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Prefeitura') {
-                                                        tituloSecao = '🏛️ AUDITORIA RP PREFEITURA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#059669';
-                                                        perguntasEspecificas = [
-                                                            { q: '🏢 O gabinete do prefeito está funcionando regularmente?', key: 'gabinetePrefeito' },
-                                                            { q: '📋 Os serviços públicos (alvará, licenças) estão sendo prestados?', key: 'servicosPublicos' },
-                                                            { q: '💰 A arrecadação de impostos está sendo feita corretamente?', key: 'arrecadacaoImpostos' },
-                                                            { q: '🏗️ Projetos de obras públicas estão sendo executados?', key: 'obrasPublicas' },
-                                                            { q: '👥 A equipe de funcionários públicos está ativa?', key: 'funcionariosAtivos' },
-                                                            { q: '📰 A comunicação com a população está sendo mantida?', key: 'comunicacaoPopulacao' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Igreja') {
-                                                        tituloSecao = '⛪ AUDITORIA RP IGREJA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#7c3aed';
-                                                        perguntasEspecificas = [
-                                                            { q: '⛪ O templo está funcionando regularmente para cultos e cerimônias?', key: 'temploFuncionando' },
-                                                            { q: '👨‍💼 Há presença regular do pastor ou líder religioso?', key: 'presencaLider' },
-                                                            { q: '💒 Casamentos e batizados estão sendo realizados conforme o RP?', key: 'cerimoniasRealizadas' },
-                                                            { q: '💰 As ofertas e dízimos estão sendo registrados adequadamente?', key: 'ofertasRegistradas' },
-                                                            { q: '🤝 A igreja está participando de eventos comunitários da cidade?', key: 'participacaoComunitaria' },
-                                                            { q: '📖 Os sermões e atividades religiosas têm qualidade de RP?', key: 'qualidadeRP' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Jornal') {
-                                                        tituloSecao = '📰 AUDITORIA RP JORNAL - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#0891b2';
-                                                        perguntasEspecificas = [
-                                                            { q: '📰 O jornal está publicando notícias regularmente?', key: 'publicacoesRegulares' },
-                                                            { q: '📝 Os jornalistas estão cobrindo eventos importantes da cidade?', key: 'coberturaEventos' },
-                                                            { q: '🎤 Entrevistas e reportagens são feitas com qualidade RP?', key: 'qualidadeReportagens' },
-                                                            { q: '📸 Há registro fotográfico dos acontecimentos?', key: 'registroFotografico' },
-                                                            { q: '💻 O site ou sistema de notícias está atualizado?', key: 'sistemaAtualizado' },
-                                                            { q: '🗞️ As notícias respeitam a veracidade e ética jornalística?', key: 'eticaJornalistica' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Mecânica') {
-                                                        tituloSecao = '🔧 AUDITORIA RP MECÂNICA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#ea580c';
-                                                        perguntasEspecificas = [
-                                                            { q: '🔧 A oficina está funcionando e atendendo clientes regularmente?', key: 'oficinaFuncionando' },
-                                                            { q: '🚗 Os reparos de veículos são feitos com qualidade RP?', key: 'reparosQualidade' },
-                                                            { q: '💰 Os preços dos serviços estão dentro da tabela da cidade?', key: 'precosTabela' },
-                                                            { q: '⚙️ Há variedade de serviços oferecidos (motor, pneu, tunning)?', key: 'variedadeServicos' },
-                                                            { q: '👨‍🔧 Os mecânicos demonstram conhecimento técnico no RP?', key: 'conhecimentoTecnico' },
-                                                            { q: '🕐 Os horários de funcionamento são respeitados?', key: 'horariosFuncionamento' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Empresários') {
-                                                        tituloSecao = '💼 AUDITORIA RP EMPRESÁRIOS - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#059669';
-                                                        perguntasEspecificas = [
-                                                            { q: '🏢 As empresas estão operando e gerando movimentação econômica?', key: 'empresasOperando' },
-                                                            { q: '💰 As transações comerciais são registradas adequadamente?', key: 'transacoesRegistradas' },
-                                                            { q: '👥 Há contratação de funcionários e geração de empregos?', key: 'geracaoEmpregos' },
-                                                            { q: '📋 Os alvarás e licenças empresariais estão em dia?', key: 'licencasEmDia' },
-                                                            { q: '🤝 Existe cooperação e parcerias entre empresários?', key: 'cooperacaoEmpresas' },
-                                                            { q: '📈 As empresas contribuem para o crescimento econômico da cidade?', key: 'contribuicaoEconomica' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Facção') {
-                                                        tituloSecao = '🔫 AUDITORIA RP FACÇÃO - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#dc2626';
-                                                        perguntasEspecificas = [
-                                                            { q: '🏠 O território da facção está bem estabelecido e defendido?', key: 'territorioEstabelecido' },
-                                                            { q: '👥 A hierarquia interna está funcionando adequadamente?', key: 'hierarquiaFuncionando' },
-                                                            { q: '💰 As atividades ilícitas geram renda para a organização?', key: 'atividadesGeram' },
-                                                            { q: '🔫 Os conflitos com outras facções seguem as regras de RP?', key: 'conflitosSegueRP' },
-                                                            { q: '🚔 As interações com a polícia são realistas?', key: 'interacaoPolicia' },
-                                                            { q: '⚖️ A facção respeita as regras gerais da cidade?', key: 'respeitaRegras' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Máfia') {
-                                                        tituloSecao = '🎩 AUDITORIA RP MÁFIA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#374151';
-                                                        perguntasEspecificas = [
-                                                            { q: '🎩 A estrutura familiar/organizacional está bem definida?', key: 'estruturaFamiliar' },
-                                                            { q: '🤵 Os rituais e tradições da máfia são seguidos no RP?', key: 'rituaisTradicoes' },
-                                                            { q: '💼 As atividades de "negócios" são conduzidas com discrição?', key: 'atividadesDiscricao' },
-                                                            { q: '🤝 Há respeito e código de honra entre os membros?', key: 'codigoHonra' },
-                                                            { q: '💰 A lavagem de dinheiro e negócios legais são bem executados?', key: 'lavagemDinheiro' },
-                                                            { q: '🕴️ A máfia mantém influência política e social na cidade?', key: 'influenciaSocial' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Jurídico') {
-                                                        tituloSecao = '⚖️ AUDITORIA RP JURÍDICO - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#1f2937';
-                                                        perguntasEspecificas = [
-                                                            { q: '👨‍💼 Os advogados estão cumprindo horários e disponibilidade para clientes?', key: 'advogadosHorarios' },
-                                                            { q: '📋 Os casos e processos estão sendo registrados adequadamente?', key: 'casosRegistrados' },
-                                                            { q: '⚖️ As defesas em tribunal estão sendo feitas com qualidade RP?', key: 'defesasQualidade' },
-                                                            { q: '💼 O escritório está organizado e funcional para atendimentos?', key: 'escritorioFuncional' },
-                                                            { q: '📞 A comunicação com delegados e juízes está adequada?', key: 'comunicacaoJudiciario' },
-                                                            { q: '💰 Os honorários estão sendo cobrados conforme tabela da cidade?', key: 'honorariosCorretos' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Prefeitura') {
-                                                        tituloSecao = '🏛️ AUDITORIA RP PREFEITURA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#059669';
-                                                        perguntasEspecificas = [
-                                                            { q: '🏢 O gabinete do prefeito está funcionando regularmente?', key: 'gabinetePrefeito' },
-                                                            { q: '📋 Os serviços públicos (alvará, licenças) estão sendo prestados?', key: 'servicosPublicos' },
-                                                            { q: '💰 A arrecadação de impostos está sendo feita corretamente?', key: 'arrecadacaoImpostos' },
-                                                            { q: '🏗️ Projetos de obras públicas estão sendo executados?', key: 'obrasPublicas' },
-                                                            { q: '👥 A equipe de funcionários públicos está ativa?', key: 'funcionariosAtivos' },
-                                                            { q: '📰 A comunicação com a população está sendo mantida?', key: 'comunicacaoPopulacao' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Polícia') {
-                                                        tituloSecao = '🚔 AUDITORIA RP POLÍCIA - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#dc2626';
-                                                        perguntasEspecificas = [
-                                                            { q: 'Estrutura física da polícia está funcional?', key: 'estruturaFisicaPolicia' },
-                                                            { q: 'Equipe policial ativa e presente nas funções RP?', key: 'equipePolicialAtiva' },
-                                                            { q: 'Porte de arma cumprido corretamente pelos agentes?', key: 'porteArmaCorreto' },
-                                                            { q: 'Mandados de prisão sendo executados conforme regras RP?', key: 'mandadosPrisaoCorretos' },
-                                                            { q: 'Prisões feitas de forma adequada e respeitando o RP?', key: 'prisoesAdequadas' },
-                                                            { q: 'Multas e advertências aplicadas corretamente?', key: 'multasAdvertenciasCorretas' },
-                                                            { q: 'Comunicação interna da equipe está fluindo bem?', key: 'comunicacaoInternaPolicia' },
-                                                            { q: 'Registros e relatórios policiais atualizados?', key: 'registrosRelatoriosAtualizados' },
-                                                            { q: 'Cumprimento dos horários e turnos?', key: 'cumprimentoHorarios' },
-                                                            { q: 'Houve reclamações ou problemas de conduta?', key: 'reclamacoesProblemasconduta' }
-                                                        ];
-                                                    } else if (setorSelecionado === 'Bombeiros') {
-                                                        tituloSecao = '🚒 AUDITORIA RP BOMBEIROS - PERGUNTAS ESPECÍFICAS';
-                                                        corSecao = '#f97316';
-                                                        perguntasEspecificas = [
-                                                            { q: 'A equipe registrou corretamente o bate-ponto nos horários estabelecidos?', key: 'batePontoCorreto' },
-                                                            { q: 'Houve atrasos ou faltas não justificadas no período auditado?', key: 'atrasosNaoJustificados' },
-                                                            { q: 'A estrutura física (bombeiros, veículos, equipamentos) está funcional?', key: 'estruturaFisicaBombeiros' },
-                                                            { q: 'Os atendimentos e resgates em RP foram realizados de forma adequada?', key: 'atendimentosResgatesAdequados' },
-                                                            { q: 'A equipe utiliza corretamente os equipamentos e veículos durante o RP?', key: 'usoCorretoEquipamentos' }
-                                                        ];
-                                                    }
-
-                                                    if (perguntasEspecificas.length > 0) {
-                                                        return h('div', { style: { padding: '32px', background: `linear-gradient(135deg, ${corSecao}55, ${corSecao}44)`, borderRadius: '24px', border: `4px solid ${corSecao}` } },
-                                                            h('h4', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '28px', color: corSecao } }, tituloSecao),
-                                                            h('div', { style: { display: 'grid', gap: '28px' } },
-                                                                perguntasEspecificas.map((item, index) => 
-                                                                    h('div', { key: `especifica_${index}`, style: { padding: '24px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '16px' } },
-                                                                        h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.3rem' } }, 
-                                                                            `${index + 1}. ${item.q}`
-                                                                        ),
-                                                                        h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                            ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                                const labels = { 
-                                                                                    excelente: '🏆 Excelente', 
-                                                                                    bom: '✅ Bom', 
-                                                                                    regular: '⚠️ Regular', 
-                                                                                    ruim: '❌ Ruim',
-                                                                                    nao_verificado: '❓ Não Verificado'
-                                                                                };
-                                                                                return h('label', { 
-                                                                                    key: opcao,
-                                                                                    style: { 
-                                                                                        display: 'flex', 
-                                                                                        alignItems: 'center',
-                                                                                        gap: '12px',
-                                                                                        cursor: 'pointer',
-                                                                                        fontSize: '1rem',
-                                                                                        padding: '14px 20px',
-                                                                                        borderRadius: '12px',
-                                                                                        background: auditoriaFormState[`especifica_${item.key}`] === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                                        border: '3px solid ' + (auditoriaFormState[`especifica_${item.key}`] === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                                        fontWeight: '600'
-                                                                                    }
-                                                                                },
-                                                                                    h('input', {
-                                                                                        type: 'radio',
-                                                                                        name: `especifica_${item.key}`,
-                                                                                        value: opcao,
-                                                                                        checked: auditoriaFormState[`especifica_${item.key}`] === opcao,
-                                                                                        onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`especifica_${item.key}`]: e.target.value}),
-                                                                                        style: { margin: 0, transform: 'scale(1.4)' }
-                                                                                    }),
-                                                                                    h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                                );
-                                                                            })
-                                                                        ),
-                                                                        h('textarea', {
-                                                                            value: auditoriaFormState[`obs_${item.key}`] || '',
-                                                                            onChange: (e) => setAuditoriaFormState({...auditoriaFormState, [`obs_${item.key}`]: e.target.value}),
-                                                                            style: {
-                                                                                width: '100%',
-                                                                                padding: '16px',
-                                                                                border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                                borderRadius: '12px',
-                                                                                fontSize: '1rem',
-                                                                                background: 'rgba(255, 255, 255, 0.2)',
-                                                                                color: 'white',
-                                                                                fontFamily: 'inherit',
-                                                                                resize: 'vertical',
-                                                                                minHeight: '100px'
-                                                                            },
-                                                                            placeholder: 'Observações específicas sobre este aspecto...'
-                                                                        })
-                                                                    )
-                                                                )
-                                                            )
-                                                        );
-                                                    } else {
-                                                        return h('div', { style: { padding: '28px', background: 'rgba(156, 163, 175, 0.2)', borderRadius: '20px', textAlign: 'center' } },
-                                                            h('p', { style: { color: 'rgba(255, 255, 255, 0.8)', fontSize: '1.2rem', fontWeight: '600' } }, 
-                                                                `📰 Selecione "Hospital", "Polícia" ou "Bombeiros" para ver perguntas específicas`
-                                                            )
-                                                        );
-                                                    }
-                                                })(),
-
-                                                // Seção 3: Economia e Gestão Financeira - OBRIGATÓRIO PARA TODAS AS AUDITORIAS RP
-                                                currentAuditoriaState.tipo === 'roleplay' && h('div', { style: { background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '40px', borderRadius: '20px', color: 'white' } },
-                                                    h('h3', { style: { fontSize: '2rem', fontWeight: 'bold', marginBottom: '20px' } }, '💰 ECONOMIA E GESTÃO FINANCEIRA'),
-                                                    h('p', { style: { fontSize: '1.1rem', marginBottom: '28px', opacity: 0.9 } }, 
-                                                        '💼 Seção obrigatória para registrar dados financeiros da organização'
-                                                    ),
-                                                    h('div', { style: { display: 'grid', gap: '32px' } },
-                                                        // Pergunta 1
-                                                        h('div', { style: { padding: '24px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '16px' } },
-                                                            h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '18px', fontSize: '1.3rem' } }, 
-                                                                '1. 💻 O painel econômico está sendo utilizado corretamente pelos responsáveis da organização?'
-                                                            ),
-                                                            h('div', { style: { display: 'flex', gap: '18px', flexWrap: 'wrap', marginBottom: '18px' } },
-                                                                ['excelente', 'bom', 'regular', 'ruim', 'nao_verificado'].map(opcao => {
-                                                                    const labels = { 
-                                                                        excelente: '🏆 Excelente', 
-                                                                        bom: '✅ Bom', 
-                                                                        regular: '⚠️ Regular', 
-                                                                        ruim: '❌ Ruim',
-                                                                        nao_verificado: '❓ Não Verificado'
-                                                                    };
-                                                                    return h('label', { 
-                                                                        key: opcao,
-                                                                        style: { 
-                                                                            display: 'flex', 
-                                                                            alignItems: 'center',
-                                                                            gap: '12px',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '1rem',
-                                                                            padding: '14px 20px',
-                                                                            borderRadius: '12px',
-                                                                            background: auditoriaFormState.economia_painel_utilizado === opcao ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.15)',
-                                                                            border: '3px solid ' + (auditoriaFormState.economia_painel_utilizado === opcao ? 'white' : 'rgba(255, 255, 255, 0.4)'),
-                                                                            fontWeight: '600'
-                                                                        }
-                                                                    },
+                                                            'A organização possui pelo menos 5 membros ativos?',
+                                                            'Os membros estão cumprindo suas funções adequadamente?',
+                                                            'A organização possui hierarquia bem definida?',
+                                                            'Há respeito mútuo entre os membros?',
+                                                            'A organização contribui positivamente para o RP da cidade?',
+                                                            'Os protocolos internos estão sendo seguidos?',
+                                                            'A comunicação interna é eficiente?',
+                                                            'A liderança está ativa e engajada?'
+                                                        ].map((pergunta, index) => 
+                                                            h('div', { key: `geral_${index}`, style: { background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px' } },
+                                                                h('p', { style: { fontSize: '1.1rem', marginBottom: '12px', fontWeight: '600' } }, `${index + 1}. ${pergunta}`),
+                                                                h('div', { style: { display: 'flex', gap: '16px' } },
+                                                                    h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } },
                                                                         h('input', {
                                                                             type: 'radio',
-                                                                            name: 'economia_painel_utilizado',
-                                                                            value: opcao,
-                                                                            checked: auditoriaFormState.economia_painel_utilizado === opcao,
-                                                                            onChange: (e) => setAuditoriaFormState({...auditoriaFormState, economia_painel_utilizado: e.target.value}),
-                                                                            style: { margin: 0, transform: 'scale(1.4)' }
+                                                                            name: `pergunta_geral_${index}`,
+                                                                            value: 'sim',
+                                                                            checked: auditoriaFormState[`pergunta_geral_${index}`] === 'sim',
+                                                                            onChange: (e) => setAuditoriaFormState({
+                                                                                ...auditoriaFormState,
+                                                                                [`pergunta_geral_${index}`]: e.target.value
+                                                                            }),
+                                                                            style: { marginRight: '4px' }
                                                                         }),
-                                                                        h('span', { style: { color: 'white', fontWeight: '700' } }, labels[opcao])
-                                                                    );
-                                                                })
-                                                            ),
-                                                            h('textarea', {
-                                                                value: auditoriaFormState.obs_economia_painel || '',
-                                                                onChange: (e) => setAuditoriaFormState({...auditoriaFormState, obs_economia_painel: e.target.value}),
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding: '16px',
-                                                                    border: '3px solid rgba(255, 255, 255, 0.4)',
-                                                                    borderRadius: '12px',
-                                                                    fontSize: '1rem',
-                                                                    background: 'rgba(255, 255, 255, 0.2)',
-                                                                    color: 'white',
-                                                                    fontFamily: 'inherit',
-                                                                    resize: 'vertical',
-                                                                    minHeight: '100px'
-                                                                },
-                                                                placeholder: 'Ex: registros organizados, entradas e saídas justificadas...'
-                                                            })
-                                                        ),
-
-                                                        // Campo para registrar saldo atual
-                                                        h('div', { style: { padding: '32px', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '20px', border: '4px solid white' } },
-                                                            h('h4', { style: { fontSize: '1.6rem', fontWeight: 'bold', color: 'white', marginBottom: '20px' } }, '💸 REGISTRO DO SALDO ATUAL'),
-                                                            h('div', { style: { display: 'grid', gridTemplateColumns: '2fr 3fr', gap: '24px' } },
-                                                                h('div', null,
-                                                                    h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '12px', fontSize: '1.2rem' } }, 
-                                                                        '💰 Saldo em Caixa (R$)'
+                                                                        '✅ SIM'
                                                                     ),
-                                                                    h('input', {
-                                                                        type: 'text',
-                                                                        value: auditoriaFormState.economia_saldo_atual || '',
-                                                                        onChange: (e) => setAuditoriaFormState({...auditoriaFormState, economia_saldo_atual: e.target.value}),
-                                                                        style: {
-                                                                            width: '100%',
-                                                                            padding: '16px',
-                                                                            border: '3px solid white',
-                                                                            borderRadius: '12px',
-                                                                            fontSize: '1.2rem',
-                                                                            background: 'white',
-                                                                            color: '#1f2937',
-                                                                            fontWeight: '600',
-                                                                            textAlign: 'center'
-                                                                        },
-                                                                        placeholder: 'Ex: R$ 125.000'
-                                                                    })
-                                                                ),
-                                                                h('div', null,
-                                                                    h('label', { style: { display: 'block', color: 'white', fontWeight: '700', marginBottom: '12px', fontSize: '1.2rem' } }, 
-                                                                        '📋 Observações sobre o Dinheiro'
-                                                                    ),
-                                                                    h('textarea', {
-                                                                        value: auditoriaFormState.obs_economia_saldo_detalhes || '',
-                                                                        onChange: (e) => setAuditoriaFormState({...auditoriaFormState, obs_economia_saldo_detalhes: e.target.value}),
-                                                                        style: {
-                                                                            width: '100%',
-                                                                            padding: '16px',
-                                                                            border: '3px solid white',
-                                                                            borderRadius: '12px',
-                                                                            fontSize: '1rem',
-                                                                            background: 'white',
-                                                                            color: '#1f2937',
-                                                                            fontFamily: 'inherit',
-                                                                            resize: 'vertical',
-                                                                            minHeight: '100px'
-                                                                        },
-                                                                        placeholder: 'Ex: dinheiro guardado em cofre, investimentos, dívidas pendentes, gastos planejados...'
-                                                                    })
+                                                                    h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } },
+                                                                        h('input', {
+                                                                            type: 'radio',
+                                                                            name: `pergunta_geral_${index}`,
+                                                                            value: 'nao',
+                                                                            checked: auditoriaFormState[`pergunta_geral_${index}`] === 'nao',
+                                                                            onChange: (e) => setAuditoriaFormState({
+                                                                                ...auditoriaFormState,
+                                                                                [`pergunta_geral_${index}`]: e.target.value
+                                                                            }),
+                                                                            style: { marginRight: '4px' }
+                                                                        }),
+                                                                        '❌ NÃO'
+                                                                    )
                                                                 )
                                                             )
                                                         )
+                                                    )
+                                                ),
+
+                                                // Seção 3: Perguntas Específicas (baseadas na organização)
+                                                auditoriaFormState.setor && h('div', { style: { background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '32px', borderRadius: '20px', color: 'white' } },
+                                                    h('h3', { style: { fontSize: '2rem', fontWeight: 'bold', marginBottom: '24px' } }, 
+                                                        `🎯 PERGUNTAS ESPECÍFICAS - ${auditoriaFormState.setor.toUpperCase()}`
+                                                    ),
+                                                    h('div', { style: { display: 'grid', gap: '20px' } },
+                                                        // Perguntas específicas baseadas no setor
+                                                        (() => {
+                                                            let perguntasEspecificas = [];
+                                                            
+                                                            if (auditoriaFormState.setor === 'Polícia') {
+                                                                perguntasEspecificas = [
+                                                                    'As abordagens estão sendo feitas de forma realista?',
+                                                                    'Os protocolos policiais estão sendo seguidos?',
+                                                                    'Há cooperação entre os diferentes subsetores?',
+                                                                    'Os equipamentos estão sendo usados adequadamente?',
+                                                                    'As prisões são justificadas e bem documentadas?',
+                                                                    'O comportamento policial está adequado ao cargo?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Hospital') {
+                                                                perguntasEspecificas = [
+                                                                    'Os atendimentos médicos são realistas?',
+                                                                    'Os protocolos hospitalares são seguidos?',
+                                                                    'Os preços dos tratamentos são justos?',
+                                                                    'Há médicos suficientes para a demanda?',
+                                                                    'O RP médico está sendo bem executado?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Mecânica') {
+                                                                perguntasEspecificas = [
+                                                                    'Os reparos são realizados de forma realista?',
+                                                                    'Os preços dos serviços são adequados?',
+                                                                    'Há mecânicos disponíveis nos horários necessários?',
+                                                                    'O RP de conserto está sendo bem feito?',
+                                                                    'Os materiais necessários estão disponíveis?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Jurídico') {
+                                                                perguntasEspecificas = [
+                                                                    'Os processos judiciais são conduzidos adequadamente?',
+                                                                    'Os advogados conhecem as leis da cidade?',
+                                                                    'As audiências são realizadas de forma realista?',
+                                                                    'Há juízes disponíveis quando necessário?',
+                                                                    'O sistema jurídico funciona eficientemente?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Prefeitura') {
+                                                                perguntasEspecificas = [
+                                                                    'As decisões administrativas são bem fundamentadas?',
+                                                                    'Há transparência nas ações da prefeitura?',
+                                                                    'Os serviços públicos funcionam adequadamente?',
+                                                                    'O prefeito está ativo e presente?',
+                                                                    'As políticas públicas beneficiam a cidade?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Empresários') {
+                                                                perguntasEspecificas = [
+                                                                    'Os negócios estão sendo conduzidos de forma realista?',
+                                                                    'Há variedade de empresas na cidade?',
+                                                                    'Os preços praticados são justos?',
+                                                                    'As empresas geram empregos para a população?',
+                                                                    'Há inovação no setor empresarial?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Facção') {
+                                                                perguntasEspecificas = [
+                                                                    'As atividades criminosas são realistas?',
+                                                                    'Há organização hierárquica bem definida?',
+                                                                    'Os confrontos são bem executados?',
+                                                                    'As guerras entre facções têm motivos válidos?',
+                                                                    'O RP criminal está adequado ao servidor?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Máfia') {
+                                                                perguntasEspecificas = [
+                                                                    'As operações mafiosas são sofisticadas?',
+                                                                    'Há discrição nas atividades ilegais?',
+                                                                    'A hierarquia mafiosa é respeitada?',
+                                                                    'Os negócios de fachada funcionam adequadamente?',
+                                                                    'O RP mafioso está sendo bem interpretado?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Igreja') {
+                                                                perguntasEspecificas = [
+                                                                    'Os cultos são realizados regularmente?',
+                                                                    'Há participação da comunidade?',
+                                                                    'O RP religioso está sendo bem executado?',
+                                                                    'A igreja oferece apoio à comunidade?',
+                                                                    'Há respeito às diferentes crenças?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Jornal') {
+                                                                perguntasEspecificas = [
+                                                                    'As notícias são publicadas regularmente?',
+                                                                    'O conteúdo jornalístico é de qualidade?',
+                                                                    'Há imparcialidade nas reportagens?',
+                                                                    'O jornal cobre eventos importantes da cidade?',
+                                                                    'A equipe jornalística está ativa?'
+                                                                ];
+                                                            } else if (auditoriaFormState.setor === 'Bombeiros') {
+                                                                perguntasEspecificas = [
+                                                                    'Os resgates são executados adequadamente?',
+                                                                    'Há bombeiros suficientes para a demanda?',
+                                                                    'Os equipamentos estão funcionando?',
+                                                                    'O tempo de resposta é adequado?',
+                                                                    'O RP de emergência está realista?'
+                                                                ];
+                                                            } else {
+                                                                // Para setores staff
+                                                                perguntasEspecificas = [
+                                                                    'A equipe está cumprindo suas responsabilidades?',
+                                                                    'Há comunicação eficiente com outras equipes?',
+                                                                    'Os prazos são respeitados adequadamente?',
+                                                                    'A qualidade do trabalho está satisfatória?',
+                                                                    'Há proatividade na resolução de problemas?'
+                                                                ];
+                                                            }
+
+                                                            return perguntasEspecificas.map((pergunta, index) => 
+                                                                h('div', { key: `especifica_${index}`, style: { background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px' } },
+                                                                    h('p', { style: { fontSize: '1.1rem', marginBottom: '12px', fontWeight: '600' } }, `${index + 1}. ${pergunta}`),
+                                                                    h('div', { style: { display: 'flex', gap: '16px' } },
+                                                                        h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } },
+                                                                            h('input', {
+                                                                                type: 'radio',
+                                                                                name: `pergunta_especifica_${index}`,
+                                                                                value: 'sim',
+                                                                                checked: auditoriaFormState[`pergunta_especifica_${index}`] === 'sim',
+                                                                                onChange: (e) => setAuditoriaFormState({
+                                                                                    ...auditoriaFormState,
+                                                                                    [`pergunta_especifica_${index}`]: e.target.value
+                                                                                }),
+                                                                                style: { marginRight: '4px' }
+                                                                            }),
+                                                                            '✅ SIM'
+                                                                        ),
+                                                                        h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } },
+                                                                            h('input', {
+                                                                                type: 'radio',
+                                                                                name: `pergunta_especifica_${index}`,
+                                                                                value: 'nao',
+                                                                                checked: auditoriaFormState[`pergunta_especifica_${index}`] === 'nao',
+                                                                                onChange: (e) => setAuditoriaFormState({
+                                                                                    ...auditoriaFormState,
+                                                                                    [`pergunta_especifica_${index}`]: e.target.value
+                                                                                }),
+                                                                                style: { marginRight: '4px' }
+                                                                            }),
+                                                                            '❌ NÃO'
+                                                                        )
+                                                                    )
+                                                                )
+                                                            );
+                                                        })()
                                                     )
                                                 ),
 
@@ -2227,7 +1488,7 @@
                                                                 fontSize: '1.1rem', 
                                                                 fontWeight: '700',
                                                                 color: (auditoriaFormState.relatorioFinal?.length >= 100) ? '#10b981' : '#fbbf24'
-                                                            } 
+                                                            }
                                                         }, 
                                                             `📊 ${auditoriaFormState.relatorioFinal?.length || 0} / 100 caracteres`
                                                         ),
@@ -2236,9 +1497,43 @@
                                                                 fontSize: '1.2rem', 
                                                                 fontWeight: 'bold',
                                                                 color: (auditoriaFormState.relatorioFinal?.length >= 100) ? '#10b981' : '#fbbf24'
-                                                            } 
+                                                            }
                                                         }, 
                                                             (auditoriaFormState.relatorioFinal?.length >= 100) ? '✅ RELATÓRIO OK' : '⏳ MÍNIMO NÃO ATINGIDO'
+                                                        )
+                                                    )
+                                                ),
+
+                                                // SEÇÃO DE NOTA FINAL
+                                                h('div', { style: { background: 'linear-gradient(135deg, #16a34a, #15803d)', padding: '32px', borderRadius: '16px', color: 'white' } },
+                                                    h('h3', { style: { fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' } }, '📊 NOTA FINAL DA AUDITORIA'),
+                                                    h('div', { style: { maxWidth: '400px', margin: '0 auto' } },
+                                                        h('p', { style: { fontSize: '1.1rem', marginBottom: '16px', textAlign: 'center', opacity: 0.9 } }, 
+                                                            '⭐ Dê uma nota de 0 a 100 para esta auditoria baseado na sua análise completa'
+                                                        ),
+                                                        h('input', {
+                                                            type: 'number',
+                                                            min: '0',
+                                                            max: '100',
+                                                            step: '0.1',
+                                                            value: auditoriaFormState.notaFinal || '',
+                                                            onChange: (e) => setAuditoriaFormState({...auditoriaFormState, notaFinal: e.target.value}),
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                border: '3px solid white',
+                                                                borderRadius: '12px',
+                                                                fontSize: '1.5rem',
+                                                                background: 'white',
+                                                                color: '#1f2937',
+                                                                fontWeight: '700',
+                                                                textAlign: 'center'
+                                                            },
+                                                            placeholder: 'Ex: 87.5'
+                                                        }),
+                                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.9rem', opacity: 0.8 } },
+                                                            h('span', null, 'Min: 0'),
+                                                            h('span', null, 'Máx: 100')
                                                         )
                                                     )
                                                 ),
@@ -2248,7 +1543,7 @@
                                                     h('button', {
                                                         onClick: saveAuditoriaData,
                                                         style: {
-                                                            background: '#16a34a',
+                                                            background: auditoriaFormState.notaFinal ? '#16a34a' : '#f59e0b',
                                                             color: 'white',
                                                             padding: '18px 40px',
                                                             border: 'none',
@@ -2257,7 +1552,7 @@
                                                             fontWeight: '700',
                                                             fontSize: '1.2rem'
                                                         }
-                                                    }, '🏆 FINALIZAR AUDITORIA')
+                                                    }, auditoriaFormState.notaFinal ? '🏆 FINALIZAR AUDITORIA' : '⚠️ FALTA A NOTA')
                                                 )
                                             )
                                         )
@@ -2405,8 +1700,16 @@
                         const checklistsAprovados = checklists.filter(c => c.status === 'aprovado');
                         const auditoriasAprovadas = auditorias.filter(a => a.status === 'aprovada');
                         
-                        const pontuacaoChecklist = checklistsAprovados.length * 50; // 50 pontos por checklist
-                        const pontuacaoAuditoria = auditoriasAprovadas.length * 100; // 100 pontos por auditoria
+                        // Calcular pontuação pelas NOTAS FINAIS (sistema simplificado)
+                        const pontuacaoChecklist = checklistsAprovados.reduce((total, checklist) => {
+                            return total + (checklist.notaFinal || 0);
+                        }, 0);
+                        
+                        const pontuacaoAuditoria = auditoriasAprovadas.reduce((total, auditoria) => {
+                            return total + (auditoria.notaFinal || 0);
+                        }, 0);
+                        
+                        // Pontuação total da cidade
                         const pontuacaoTotal = pontuacaoChecklist + pontuacaoAuditoria;
                         
                         const metaCidade = 815; // Meta da cidade
@@ -2435,7 +1738,8 @@
                                                 h('div', { style: { fontSize: '4rem', marginBottom: '16px' } }, '✅'),
                                                 h('h4', { style: { fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' } }, 'Checklists'),
                                                 h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6' } }, pontuacaoChecklist),
-                                                h('p', { style: { color: '#6b7280' } }, `${checklistsAprovados.length} aprovados × 50 pts`)
+                                                h('p', { style: { color: '#6b7280', marginBottom: '4px' } }, `${checklistsAprovados.length} checklists aprovados`),
+                                                h('p', { style: { color: '#6b7280' } }, `Soma das notas finais`)
                                             ),
                                             
                                             // Auditoria
@@ -2443,7 +1747,8 @@
                                                 h('div', { style: { fontSize: '4rem', marginBottom: '16px' } }, '🔍'),
                                                 h('h4', { style: { fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' } }, 'Auditorias'),
                                                 h('p', { style: { fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981' } }, pontuacaoAuditoria),
-                                                h('p', { style: { color: '#6b7280' } }, `${auditoriasAprovadas.length} aprovadas × 100 pts`)
+                                                h('p', { style: { color: '#6b7280', marginBottom: '4px' } }, `${auditoriasAprovadas.length} auditorias aprovadas`),
+                                                h('p', { style: { color: '#6b7280' } }, `Soma das notas finais`)
                                             ),
                                             
                                             // Total
@@ -2504,7 +1809,7 @@
                         );
                     };
 
-                    // Página de Administração COMPLETA RESTAURADA
+                    // Página de Administração COMPLETA
                     const AdminPage = () => {
                         const approveUser = (userId) => {
                             const user = pendingUsers.find(u => u.id === userId);
@@ -2520,32 +1825,20 @@
                             alert('❌ Usuário rejeitado!');
                         };
 
-                        const approvePasswordReset = (resetId) => {
-                            const resetRequest = pendingPasswordResets.find(r => r.id === resetId);
-                            if (resetRequest) {
-                                setUsers(users.map(u => 
-                                    u.id === resetRequest.userId ? { ...u, senha: resetRequest.novaSenha } : u
-                                ));
-                                setPendingPasswordResets(pendingPasswordResets.filter(r => r.id !== resetId));
-                                alert('✅ Reset de senha aprovado! Senha alterada com sucesso.');
-                            }
-                        };
-
-                        const rejectPasswordReset = (resetId) => {
-                            setPendingPasswordResets(pendingPasswordResets.filter(r => r.id !== resetId));
-                            alert('❌ Reset de senha rejeitado!');
-                        };
-
                         const approveChecklist = (checklistId) => {
+                            const checklist = checklists.find(c => c.id === checklistId);
+                            const notaFinal = checklist.notaFinal || 0;
+                            
                             setChecklists(checklists.map(c => 
                                 c.id === checklistId ? { 
                                     ...c, 
                                     status: 'aprovado', 
                                     approvedBy: currentUser.id, 
-                                    approvedAt: new Date().toISOString() 
+                                    approvedAt: new Date().toISOString()
                                 } : c
                             ));
-                            alert('✅ Checklist aprovado! +50 pontos para a cidade!');
+                            
+                            alert(`✅ CHECKLIST APROVADO!\n\n📊 Pontos para a cidade: ${notaFinal}/50 pts\n\n🏆 Auditado por: ${checklist.autor || 'N/A'}\n📅 Realizado em: ${new Date(checklist.createdAt).toLocaleDateString('pt-BR')}`);
                         };
 
                         const rejectChecklist = (checklistId) => {
@@ -2566,15 +1859,19 @@
                         };
 
                         const approveAuditoria = (auditoriaId) => {
+                            const auditoria = auditorias.find(a => a.id === auditoriaId);
+                            const notaFinal = auditoria.notaFinal || 0;
+                            
                             setAuditorias(auditorias.map(a => 
                                 a.id === auditoriaId ? { 
                                     ...a, 
                                     status: 'aprovada', 
                                     approvedBy: currentUser.id, 
-                                    approvedAt: new Date().toISOString() 
+                                    approvedAt: new Date().toISOString()
                                 } : a
                             ));
-                            alert('✅ Auditoria aprovada! +100 pontos para a cidade!');
+                            
+                            alert(`✅ AUDITORIA APROVADA!\n\n📊 Pontos para a cidade: ${notaFinal}/100 pts\n\n🏆 Auditado por: ${auditoria.autor || 'N/A'}\n📅 Realizada em: ${new Date(auditoria.createdAt).toLocaleDateString('pt-BR')}\n⏱️ Duração: ${auditoria.duracaoAutomatica || 'N/A'}`);
                         };
 
                         const rejectAuditoria = (auditoriaId) => {
@@ -2914,10 +2211,11 @@
                 if (rootElement) {
                     const root = ReactDOM.createRoot(rootElement);
                     root.render(h(MetaXSystem));
-                    console.log('✅ MetaX System v4.0 ULTRA COMPLETO carregado com sucesso!');
-                    console.log('🚔 Subsetor da Polícia implementado na Auditoria!');
-                    console.log('⏰ Duração automática das auditorias implementada!');
-                    console.log('🎯 Sistema 100% funcional restaurado!');
+                    console.log('✅ MetaX - Melhor Sistema Auditor de FiveM carregado com sucesso!');
+                    console.log('🎯 Sistema completo de auditorias e checklists!');
+                    console.log('🔧 Sistema de notas profissional implementado!');
+                    console.log('🚔 Suporte completo a organizações e setores!');
+                    console.log('🏆 Sistema mundial de auditoria ativo!');
                 } else {
                     throw new Error('Elemento root não encontrado');
                 }
