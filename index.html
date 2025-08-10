@@ -906,6 +906,7 @@
                                 { id: 'auditoria', label: '🔍 Auditoria', icon: '🔍' },
                                 { id: 'painel', label: '🏙️ Painel da Cidade', icon: '🏙️' },
                                 { id: 'financeiro', label: '💸 Painel Financeiro', icon: '💸' },
+                                { id: 'legislativo', label: '📘 Legislativo Digital', icon: '📘' },
                                 ...(currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor' 
                                     ? [{ id: 'admin', label: '⚙️ Administração', icon: '⚙️' }] 
                                     : [])
@@ -2242,6 +2243,10 @@
                             // Quantidade de vezes que fizeram repor painel
                             const reporPainel = Math.floor((totalChecklists + totalAuditorias) * 1.5) + solicitacoesFinanceiras.length * 2;
                             
+                            // NOVA ESTATÍSTICA: Leis aprovadas do sistema legislativo
+                            const [leisSolicitacoes] = useState([]);
+                            const leisAprovadas = leisSolicitacoes.filter(lei => lei.status === 'aprovada').length;
+                            
                             return {
                                 totalChecklists,
                                 totalAuditorias,
@@ -2249,7 +2254,8 @@
                                 auditoriasAprovadas,
                                 mediaChecklists,
                                 mediaAuditorias,
-                                reporPainel
+                                reporPainel,
+                                leisAprovadas
                             };
                         };
 
@@ -2280,6 +2286,7 @@
                                             { icon: '📈', titulo: 'Média Auditorias', valor: `${stats.mediaAuditorias}/140`, cor: '#228B22' },
                                             { icon: '✅', titulo: 'Checklists Aprovados', valor: stats.checklistsAprovados, cor: '#4169E1' },
                                             { icon: '🔍', titulo: 'Auditorias Aprovadas', valor: stats.auditoriasAprovadas, cor: '#DC143C' },
+                                            { icon: '📘', titulo: 'Leis Aprovadas', valor: stats.leisAprovadas, cor: '#9370DB' },
                                             { icon: '🔄', titulo: 'Repor Painel', valor: stats.reporPainel, cor: '#32CD32' }
                                         ].map((stat, index) =>
                                             h('div', {
@@ -2324,6 +2331,7 @@
                                                 [
                                                     `✅ Checklists Aprovados: ${stats.checklistsAprovados}`,
                                                     `🔍 Auditorias Aprovadas: ${stats.auditoriasAprovadas}`,
+                                                    `📘 Leis Aprovadas: ${stats.leisAprovadas}`,
                                                     `📊 Média Geral Checklists: ${stats.mediaChecklists}/100`,
                                                     `📈 Média Geral Auditorias: ${stats.mediaAuditorias}/140`,
                                                     `🔄 Total de Repor Painel: ${stats.reporPainel}`
@@ -2784,6 +2792,252 @@
                         );
                     };
 
+                    // Página do Legislativo Digital
+                    const LegislativoPage = () => {
+                        const [leisSolicitacoes, setLeisSolicitacoes] = useState([]);
+                        const [form, setForm] = React.useState({
+                            solicitanteNome: currentUser?.nome || '',
+                            solicitanteId: currentUser?.id || '',
+                            cargoRP: currentUser?.cargoRP || '',
+                            cargoStaff: currentUser?.cargo || '',
+                            envolvidos: '',
+                            aFavor: '',
+                            tipoRegra: '',
+                            tipoAcao: '',
+                            texto: ''
+                        });
+                        const [erro, setErro] = React.useState('');
+                        const [aba, setAba] = React.useState('abrir');
+                        const podeAprovar = ['Diretor'].includes(currentUser?.cargo);
+                        const [modalLeitura, setModalLeitura] = React.useState(null);
+
+                        function enviar(e) {
+                            e.preventDefault();
+                            if (
+                                !form.solicitanteNome || !form.solicitanteId || !form.cargoRP || !form.cargoStaff ||
+                                !form.envolvidos || !form.aFavor || !form.tipoRegra || !form.tipoAcao || !form.texto
+                            ) {
+                                setErro('Preencha todos os campos obrigatórios!');
+                                return;
+                            }
+                            setErro('');
+                            setLeisSolicitacoes([
+                                ...leisSolicitacoes,
+                                {
+                                    ...form,
+                                    status: 'pendente',
+                                    criadoPor: currentUser.id,
+                                    criadoEm: new Date().toISOString(),
+                                    id: Date.now(),
+                                    historico: []
+                                }
+                            ]);
+                            setForm({
+                                solicitanteNome: currentUser?.nome || '',
+                                solicitanteId: currentUser?.id || '',
+                                cargoRP: currentUser?.cargoRP || '',
+                                cargoStaff: currentUser?.cargo || '',
+                                envolvidos: '',
+                                aFavor: '',
+                                tipoRegra: '',
+                                tipoAcao: '',
+                                texto: ''
+                            });
+                            setAba('pendentes');
+                            alert('Solicitação enviada para aprovação!');
+                        }
+
+                        function aprovar(id) {
+                            setLeisSolicitacoes(
+                                leisSolicitacoes.map(sol => sol.id === id
+                                    ? { ...sol, status: 'aprovada', aprovadoPor: currentUser.nome, aprovadoEm: new Date().toISOString(), historico: [...(sol.historico || []), {acao: 'Aprovado', por: currentUser.nome, em: new Date().toISOString()}] }
+                                    : sol
+                                )
+                            );
+                        }
+                        function reprovar(id, justificativa) {
+                            if (!justificativa) return alert('Justificativa obrigatória!');
+                            setLeisSolicitacoes(
+                                leisSolicitacoes.map(sol => sol.id === id
+                                    ? { ...sol, status: 'reprovada', reprovadoPor: currentUser.nome, reprovadoEm: new Date().toISOString(), justificativa, historico: [...(sol.historico || []), {acao: 'Reprovado', por: currentUser.nome, em: new Date().toISOString(), justificativa}] }
+                                    : sol
+                                )
+                            );
+                        }
+
+                        const minhas = leisSolicitacoes.filter(sol => sol.criadoPor === currentUser.id);
+                        const pendentes = leisSolicitacoes.filter(sol => sol.status === 'pendente');
+                        const aprovadas = leisSolicitacoes.filter(sol => sol.status === 'aprovada');
+
+                        return h('div', { style: { minHeight: '100vh', background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)' } },
+                            h(Header),
+                            h('div', { style: { display: 'flex' } },
+                                h(Sidebar),
+                                h('main', { style: { flex: 1, padding: '40px', maxWidth: 900, margin: '0 auto' } },
+                                    h('h2', { 
+                                        style: { 
+                                            fontSize: '2.8rem', 
+                                            fontWeight: '900', 
+                                            background: 'linear-gradient(45deg, #ffd700, #fff)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text',
+                                            marginBottom: '40px',
+                                            textShadow: '0 0 30px rgba(255, 215, 0, 0.5)'
+                                        } 
+                                    }, '📘 Legislativo Digital / Leis da Cidade'),
+                                    h('div', { style: { display: 'flex', gap: 10, marginBottom: 40 } },
+                                        h('button', { onClick:()=>setAba('abrir'), style: { background: aba==='abrir'?'linear-gradient(45deg, #ffd700, #228B22)':'rgba(255, 215, 0, 0.2)', color: aba==='abrir'?'#000':'#ffd700', border: '2px solid #ffd700', borderRadius: 12, padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer' } }, 'Nova Solicitação'),
+                                        h('button', { onClick:()=>setAba('pendentes'), style: { background: aba==='pendentes'?'linear-gradient(45deg, #ffd700, #228B22)':'rgba(255, 215, 0, 0.2)', color: aba==='pendentes'?'#000':'#ffd700', border: '2px solid #ffd700', borderRadius: 12, padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer' } }, 'Pendentes'),
+                                        h('button', { onClick:()=>setAba('aprovadas'), style: { background: aba==='aprovadas'?'linear-gradient(45deg, #ffd700, #228B22)':'rgba(255, 215, 0, 0.2)', color: aba==='aprovadas'?'#000':'#ffd700', border: '2px solid #ffd700', borderRadius: 12, padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer' } }, 'Leis Aprovadas'),
+                                        h('button', { onClick:()=>setAba('minhas'), style: { background: aba==='minhas'?'linear-gradient(45deg, #ffd700, #228B22)':'rgba(255, 215, 0, 0.2)', color: aba==='minhas'?'#000':'#ffd700', border: '2px solid #ffd700', borderRadius: 12, padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer' } }, 'Minhas Solicitações'),
+                                    ),
+                                    aba === 'abrir' && h('form', { onSubmit: enviar, style: { background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '3px solid #ffd700', borderRadius: '20px', padding: '40px', marginBottom: 40, boxShadow: '0 0 40px rgba(255, 215, 0, 0.4)' } },
+                                        h('h3', { style: { color: '#ffd700', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: 30, textShadow: '0 0 15px rgba(255, 215, 0, 0.5)' } }, 'Abertura de Solicitação de Lei'),
+                                        erro && h('p', { style: { color: '#dc2626', fontWeight: 'bold', marginBottom: 14 } }, erro),
+                                        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' } },
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Seu nome'), 
+                                                h('input', { value: form.solicitanteNome, onChange: e=>setForm(f=>({...f, solicitanteNome: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                            ),
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Seu ID'), 
+                                                h('input', { value: form.solicitanteId, onChange: e=>setForm(f=>({...f, solicitanteId: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                            ),
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Cargo RP'), 
+                                                h('input', { value: form.cargoRP, onChange: e=>setForm(f=>({...f, cargoRP: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                            ),
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Cargo staff'), 
+                                                h('input', { value: form.cargoStaff, onChange: e=>setForm(f=>({...f, cargoStaff: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                            )
+                                        ),
+                                        h('div', { style: { marginBottom: 20 } },
+                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Envolvidos no debate (nomes/cargos, separados por vírgula)'), 
+                                            h('input', { value: form.envolvidos, onChange: e=>setForm(f=>({...f, envolvidos: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                        ),
+                                        h('div', { style: { marginBottom: 20 } },
+                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Quem foi a favor (nomes/cargos, separados por vírgula)'), 
+                                            h('input', { value: form.aFavor, onChange: e=>setForm(f=>({...f, aFavor: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } })
+                                        ),
+                                        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' } },
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Tipo da regra'),
+                                                h('select', { value: form.tipoRegra, onChange: e=>setForm(f=>({...f, tipoRegra: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } },
+                                                    h('option', { value: '' }, 'Selecione...'),
+                                                    h('option', { value: 'penal' }, 'Penal'),
+                                                    h('option', { value: 'administrativa' }, 'Administrativa'),
+                                                    h('option', { value: 'urbana' }, 'Urbana'),
+                                                    h('option', { value: 'outra' }, 'Outra')
+                                                )
+                                            ),
+                                            h('div', { style: { marginBottom: 10 } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Tipo da ação'),
+                                                h('select', { value: form.tipoAcao, onChange: e=>setForm(f=>({...f, tipoAcao: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500' } },
+                                                    h('option', { value: '' }, 'Selecione...'),
+                                                    h('option', { value: 'criar' }, 'Criar nova regra'),
+                                                    h('option', { value: 'alterar' }, 'Alterar regra existente'),
+                                                    h('option', { value: 'remover' }, 'Remover regra')
+                                                )
+                                            )
+                                        ),
+                                        h('div', { style: { marginBottom: 25 } },
+                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Texto da nova regra / explicação da mudança ou remoção'),
+                                            h('textarea', { value: form.texto, onChange: e=>setForm(f=>({...f, texto: e.target.value})), style: { width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500', minHeight: 120, resize: 'vertical' } })
+                                        ),
+                                        h('button', { type: 'submit', style: { background: 'linear-gradient(45deg, #228B22, #ffd700)', color: '#000', padding: '16px 32px', borderRadius: 12, fontWeight: 'bold', border: '2px solid #228B22', marginTop: 12, cursor: 'pointer', fontSize: '1.1rem', textTransform: 'uppercase' } }, 'Finalizar e Enviar para Aprovação')
+                                    ),
+                                    aba === 'pendentes' && h('div', {},
+                                        h('h3', { style: { color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: 20 } }, 'Solicitações Pendentes'),
+                                        pendentes.length === 0 && h('p', { style: { color: '#6b7280' } }, 'Nenhuma pendente.'),
+                                        pendentes.map(sol =>
+                                            h('div', { key: sol.id, style: { background: 'rgba(255, 215, 0, 0.1)', border: '2px solid #ffd700', borderRadius: 16, padding: 25, marginBottom: 25, boxShadow: '0 0 25px rgba(255, 215, 0, 0.3)' } },
+                                                h('b', { style: { color: '#ffd700', fontSize: '1.2rem' } }, `Solicitante: ${sol.solicitanteNome} (${sol.solicitanteId}) [${sol.cargoRP}/${sol.cargoStaff}]`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Envolvidos: ${sol.envolvidos}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `A favor: ${sol.aFavor}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Tipo de regra: ${sol.tipoRegra}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Tipo de ação: ${sol.tipoAcao}`),
+                                                h('div', { style: { marginTop: 20 } },
+                                                    h('button', { onClick:()=>setModalLeitura(sol), style: { background: 'linear-gradient(45deg, #ffd700, #228B22)', color: '#000', border: 'none', borderRadius: 8, padding: '12px 24px', fontWeight: 'bold', marginRight: 12, cursor: 'pointer' } }, 'Visualizar/Analisar'),
+                                                    !podeAprovar && h('span', { style: { color: '#f59e0b', fontWeight: '600' } }, '⚠️ Somente Diretoria/CEO podem aprovar')
+                                                )
+                                            )
+                                        ),
+                                        modalLeitura && h('div', {
+                                            style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }
+                                        },
+                                            h('div', { style: { background: 'rgba(0,0,0,0.9)', border: '3px solid #ffd700', borderRadius: 20, maxWidth: 700, padding: 40, position: 'relative', backdropFilter: 'blur(15px)', boxShadow: '0 0 50px rgba(255, 215, 0, 0.5)' } },
+                                                h('button', { onClick:()=>setModalLeitura(null), style: { position: 'absolute', top: 15, right: 15, background: '#e5e7eb', border: 'none', borderRadius: 25, padding: '5px 15px', fontWeight: 'bold', cursor: 'pointer' } }, 'X'),
+                                                h('h3', { style: { color: '#ffd700', fontSize: '1.6rem', marginBottom: 20, fontWeight: 'bold' } }, 'Visualização da Solicitação'),
+                                                h('p', { style: { color: '#fff', marginBottom: 10 } }, `Solicitante: ${modalLeitura.solicitanteNome} (${modalLeitura.solicitanteId}) [${modalLeitura.cargoRP}/${modalLeitura.cargoStaff}]`),
+                                                h('p', { style: { color: '#fff', marginBottom: 10 } }, `Envolvidos: ${modalLeitura.envolvidos}`),
+                                                h('p', { style: { color: '#fff', marginBottom: 10 } }, `A favor: ${modalLeitura.aFavor}`),
+                                                h('p', { style: { color: '#fff', marginBottom: 10 } }, `Tipo de regra: ${modalLeitura.tipoRegra}`),
+                                                h('p', { style: { color: '#fff', marginBottom: 15 } }, `Tipo de ação: ${modalLeitura.tipoAcao}`),
+                                                h('p', { style: { background: 'rgba(255, 215, 0, 0.1)', border: '2px solid #ffd700', padding: 20, borderRadius: 12, fontWeight: 'bold', color: '#fff', margin: '20px 0' } }, modalLeitura.texto),
+                                                podeAprovar && h('div', { style: { marginTop: 25, display: 'flex', gap: '15px' } },
+                                                    h('button', { onClick:()=>{aprovar(modalLeitura.id);setModalLeitura(null);}, style: { background: 'linear-gradient(45deg, #228B22, #32CD32)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 30px', fontWeight: 'bold', cursor: 'pointer' } }, 'Aprovar'),
+                                                    h('button', {
+                                                        onClick:()=>{
+                                                            const justificativa = prompt('Justificativa da reprovação:');
+                                                            if(justificativa) {reprovar(modalLeitura.id, justificativa);setModalLeitura(null);}
+                                                        },
+                                                        style: { background: 'linear-gradient(45deg, #DC143C, #FF6347)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 30px', fontWeight: 'bold', cursor: 'pointer' }
+                                                    }, 'Reprovar')
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    aba === 'aprovadas' && h('div', {},
+                                        h('h3', { style: { color: '#228B22', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: 20 } }, 'Leis Aprovadas'),
+                                        aprovadas.length === 0 && h('p', { style: { color: '#6b7280' } }, 'Nenhuma aprovada ainda.'),
+                                        aprovadas.map(sol =>
+                                            h('div', { key: sol.id, style: { background: 'rgba(34, 139, 34, 0.1)', border: '2px solid #228B22', borderRadius: 16, padding: 25, marginBottom: 25, boxShadow: '0 0 25px rgba(34, 139, 34, 0.3)' } },
+                                                h('b', { style: { color: '#228B22', fontSize: '1.2rem' } }, `Regra: ${sol.tipoRegra.toUpperCase()} | ${sol.tipoAcao.toUpperCase()}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Texto: ${sol.texto}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Aprovada por: ${sol.aprovadoPor || ''}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Data: ${sol.aprovadoEm ? new Date(sol.aprovadoEm).toLocaleString('pt-BR') : ''}`),
+                                                sol.historico && sol.historico.length > 0 && h('details', { style: { marginTop: 15 } },
+                                                    h('summary', { style: { color: '#ffd700', fontWeight: 'bold', cursor: 'pointer' } }, 'Histórico'),
+                                                    sol.historico.map((hist,i) =>
+                                                        h('p', { key: i, style: { fontSize: '0.92em', color: '#64748b', margin: '5px 0 5px 20px' } }, `${hist.acao} por ${hist.por} em ${new Date(hist.em).toLocaleString('pt-BR')}${hist.justificativa?' ('+hist.justificativa+')':''}`)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    aba === 'minhas' && h('div', {},
+                                        h('h3', { style: { color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: 20 } }, 'Minhas Solicitações'),
+                                        minhas.length === 0 && h('p', { style: { color: '#6b7280' } }, 'Nenhuma aberta.'),
+                                        minhas.map(sol =>
+                                            h('div', { key: sol.id, style: { 
+                                                background: sol.status === 'aprovada' 
+                                                    ? 'rgba(34, 139, 34, 0.1)' 
+                                                    : sol.status === 'reprovada' 
+                                                    ? 'rgba(220, 20, 60, 0.1)' 
+                                                    : 'rgba(255, 215, 0, 0.1)', 
+                                                border: `2px solid ${sol.status === 'aprovada' ? '#228B22' : sol.status === 'reprovada' ? '#DC143C' : '#ffd700'}`, 
+                                                borderRadius: 16, 
+                                                padding: 25, 
+                                                marginBottom: 25, 
+                                                boxShadow: `0 0 25px ${sol.status === 'aprovada' ? 'rgba(34, 139, 34, 0.3)' : sol.status === 'reprovada' ? 'rgba(220, 20, 60, 0.3)' : 'rgba(255, 215, 0, 0.3)'}` 
+                                            } },
+                                                h('b', { style: { color: sol.status === 'aprovada' ? '#228B22' : sol.status === 'reprovada' ? '#DC143C' : '#ffd700', fontSize: '1.2rem' } }, `Solicitação: ${sol.tipoRegra.toUpperCase()} | ${sol.tipoAcao.toUpperCase()}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Texto: ${sol.texto}`),
+                                                h('p', { style: { color: '#fff', margin: '10px 0' } }, `Status: ${
+                                                    sol.status==='pendente' ? '⏳ Pendente' :
+                                                    sol.status==='aprovada' ? '✅ Aprovada' : '❌ Rejeitada'
+                                                }`),
+                                                sol.status==='reprovada' && h('p', { style: { color: '#dc2626', margin: '10px 0' } }, `Justificativa da reprovação: ${sol.justificativa}`)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    };
+
                     // Página de Administração (somente CEO/Diretor)
                     const AdminPage = () => {
                         const [activeTab, setActiveTab] = useState('usuarios');
@@ -3148,6 +3402,8 @@
                             return h(PainelCidadePage);
                         case 'financeiro':
                             return h(FinanceiroPage);
+                        case 'legislativo':
+                            return h(LegislativoPage);
                         case 'admin':
                             return (currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor') 
                                 ? h(AdminPage) 
