@@ -7,6 +7,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { 
             margin: 0; 
@@ -352,37 +353,91 @@
 
                 const { useState, useEffect, createElement: h } = React;
                 
-                // Hook personalizado para localStorage
-                const useStoredState = (key, initialValue) => {
-                    const [value, setValue] = useState(() => {
+                // ⚡ CONFIGURAÇÃO DO SUPABASE ⚡
+                const SUPABASE_URL = 'https://jrgzyeufpccitppcwzxh.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ3p5ZXVmcGNjaXRwcGN3enhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDExNTYsImV4cCI6MjA3MDQxNzE1Nn0.asaczDLMqXdkK_XpogA4IRmXYqLcAGsu2hSCG4fkdQE';
+                
+                // Inicializar Supabase
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Hook para dados do Supabase
+                const useSupabaseData = (table, dependencies = []) => {
+                    const [data, setData] = useState([]);
+                    const [loading, setLoading] = useState(true);
+                    
+                    const fetchData = async () => {
                         try {
-                            const stored = localStorage.getItem('metax_' + key);
-                            return stored ? JSON.parse(stored) : initialValue;
-                        } catch {
-                            return initialValue;
+                            const { data: result, error } = await supabase
+                                .from(table)
+                                .select('*')
+                                .order('created_at', { ascending: false });
+                            
+                            if (error) throw error;
+                            setData(result || []);
+                        } catch (error) {
+                            console.error(`Erro ao carregar ${table}:`, error);
+                            // Fallback para localStorage em caso de erro
+                            const stored = localStorage.getItem(`metax_${table}`);
+                            if (stored) setData(JSON.parse(stored));
+                        } finally {
+                            setLoading(false);
                         }
-                    });
-
+                    };
+                    
                     useEffect(() => {
-                        try {
-                            localStorage.setItem('metax_' + key, JSON.stringify(value));
-                        } catch (e) {
-                            console.warn('LocalStorage error:', e);
+                        fetchData();
+                    }, dependencies);
+                    
+                    return [data, setData, loading, fetchData];
+                };
+                
+                // Função para salvar no Supabase
+                const saveToSupabase = async (table, data, isUpdate = false) => {
+                    try {
+                        let result;
+                        if (isUpdate) {
+                            result = await supabase
+                                .from(table)
+                                .update(data)
+                                .eq('id', data.id);
+                        } else {
+                            result = await supabase
+                                .from(table)
+                                .insert([data]);
                         }
-                    }, [key, value]);
-
-                    return [value, setValue];
+                        
+                        if (result.error) throw result.error;
+                        return result;
+                    } catch (error) {
+                        console.error(`Erro ao salvar em ${table}:`, error);
+                        // Fallback para localStorage
+                        const stored = JSON.parse(localStorage.getItem(`metax_${table}`) || '[]');
+                        if (isUpdate) {
+                            const updated = stored.map(item => item.id === data.id ? data : item);
+                            localStorage.setItem(`metax_${table}`, JSON.stringify(updated));
+                        } else {
+                            stored.push(data);
+                            localStorage.setItem(`metax_${table}`, JSON.stringify(stored));
+                        }
+                        throw error;
+                    }
                 };
 
                 // Componente principal do sistema
                 const MetaXSystem = () => {
-                    const [currentUser, setCurrentUser] = useStoredState('currentUser', null);
-                    const [users, setUsers] = useStoredState('users', []);
-                    const [pendingUsers, setPendingUsers] = useStoredState('pendingUsers', []);
-                    const [checklists, setChecklists] = useStoredState('checklists', []);
-                    const [auditorias, setAuditorias] = useStoredState('auditorias', []);
-                    const [currentView, setCurrentView] = useStoredState('currentView', 'login');
-                    const [solicitacoesFinanceiras, setSolicitacoesFinanceiras] = useStoredState('solicitacoesFinanceiras', []);
+                    // Estados locais
+                    const [currentUser, setCurrentUser] = useState(null);
+                    const [currentView, setCurrentView] = useState('login');
+                    
+                    // Dados do Supabase
+                    const [users, setUsers, usersLoading, refetchUsers] = useSupabaseData('usuarios');
+                    const [checklists, setChecklists, checklistsLoading, refetchChecklists] = useSupabaseData('checklists');
+                    const [auditorias, setAuditorias, auditoriasLoading, refetchAuditorias] = useSupabaseData('auditorias');
+                    const [solicitacoesFinanceiras, setSolicitacoesFinanceiras, financeirasLoading, refetchFinanceiras] = useSupabaseData('solicitacoes_financeiras');
+                    
+                    // Separar usuários aprovados e pendentes
+                    const approvedUsers = users.filter(u => u.status === 'aprovado');
+                    const pendingUsers = users.filter(u => u.status === 'pendente');
 
                     // Inicializar usuários padrão
                     useEffect(() => {
@@ -420,25 +475,25 @@
                         });
                         const [resetData, setResetData] = useState({ id: '', novaSenha: '' });
 
-                        const handleLogin = (e) => {
+                        const handleLogin = async (e) => {
                             e.preventDefault();
                             
-                            const user = users.find(u => 
+                            const user = approvedUsers.find(u => 
                                 String(u.id) === String(formData.id) && 
-                                String(u.senha) === String(formData.senha) && 
-                                u.status === 'aprovado'
+                                String(u.senha) === String(formData.senha)
                             );
                             
                             if (user) {
                                 setCurrentUser(user);
                                 setCurrentView('dashboard');
+                                localStorage.setItem('metax_currentUser', JSON.stringify(user));
                                 console.log('✅ Login realizado:', user.nome);
                             } else {
                                 alert('❌ ID ou senha incorretos!');
                             }
                         };
 
-                        const handleRegister = (e) => {
+                        const handleRegister = async (e) => {
                             e.preventDefault();
                             
                             if (!registerData.nome || !registerData.id || !registerData.senha) {
@@ -446,7 +501,7 @@
                                 return;
                             }
 
-                            const userExists = [...users, ...pendingUsers].find(u => u.id === registerData.id);
+                            const userExists = users.find(u => u.id === registerData.id);
                             if (userExists) {
                                 alert('❌ ID já existe!');
                                 return;
@@ -454,14 +509,18 @@
 
                             const newUser = {
                                 ...registerData,
-                                status: 'pendente',
-                                createdAt: new Date().toISOString()
+                                status: 'pendente'
                             };
 
-                            setPendingUsers([...pendingUsers, newUser]);
-                            alert('✅ Cadastro enviado para aprovação!');
-                            setIsRegister(false);
-                            setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
+                            try {
+                                await saveToSupabase('usuarios', newUser);
+                                refetchUsers(); // Recarregar lista de usuários
+                                alert('✅ Cadastro enviado para aprovação!');
+                                setIsRegister(false);
+                                setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
+                            } catch (error) {
+                                alert('❌ Erro ao registrar usuário. Tente novamente.');
+                            }
                         };
 
                         const handlePasswordReset = (e) => {
