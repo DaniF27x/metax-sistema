@@ -469,11 +469,9 @@
                     const LoginPage = () => {
                         const [formData, setFormData] = useState({ id: '', senha: '' });
                         const [isRegister, setIsRegister] = useState(false);
-                        const [isResetPassword, setIsResetPassword] = useState(false);
                         const [registerData, setRegisterData] = useState({
                             nome: '', id: '', senha: '', cargo: 'Staff Geral'
                         });
-                        const [resetData, setResetData] = useState({ id: '', novaSenha: '' });
 
                         const handleLogin = async (e) => {
                             e.preventDefault();
@@ -523,28 +521,7 @@
                             }
                         };
 
-                        const handlePasswordReset = (e) => {
-                            e.preventDefault();
-                            
-                            if (!resetData.id || !resetData.novaSenha) {
-                                alert('⚠️ Preencha todos os campos!');
-                                return;
-                            }
 
-                            const userExists = users.find(u => u.id === resetData.id && u.status === 'aprovado');
-                            if (!userExists) {
-                                alert('❌ ID não encontrado ou usuário não aprovado!');
-                                return;
-                            }
-
-                            setUsers(users.map(u => 
-                                u.id === resetData.id ? { ...u, senha: resetData.novaSenha } : u
-                            ));
-                            
-                            alert('✅ Senha alterada com sucesso!');
-                            setIsResetPassword(false);
-                            setResetData({ id: '', novaSenha: '' });
-                        };
 
                         const inputStyle = {
                             width: '100%',
@@ -657,7 +634,7 @@
                                 ),
 
                                 // Formulários
-                                !isRegister && !isResetPassword ? (
+                                !isRegister ? (
                                     // Login Form
                                     h('form', { onSubmit: handleLogin },
                                         h('div', { style: { marginBottom: '24px' } },
@@ -697,13 +674,9 @@
                                             onClick: () => setIsRegister(true),
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Criar Nova Conta'),
-                                        h('button', {
-                                            type: 'button',
-                                            onClick: () => setIsResetPassword(true),
-                                            style: { ...buttonStyle, background: 'transparent', color: '#228B22', border: '2px solid #228B22', marginTop: '12px' }
-                                        }, '🔐 Recuperar Senha')
+
                                     )
-                                ) : isRegister ? (
+                                ) : (
                                     // Register Form
                                     h('form', { onSubmit: handleRegister },
                                         h('div', { style: { marginBottom: '20px' } },
@@ -759,41 +732,6 @@
                                         h('button', {
                                             type: 'button',
                                             onClick: () => setIsRegister(false),
-                                            style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
-                                        }, 'Voltar ao Login')
-                                    )
-                                ) : (
-                                    // Reset Password Form
-                                    h('form', { onSubmit: handlePasswordReset },
-                                        h('div', { style: { marginBottom: '20px' } },
-                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'ID do Usuário'),
-                                            h('input', {
-                                                type: 'text',
-                                                value: resetData.id,
-                                                onChange: (e) => setResetData({ ...resetData, id: e.target.value }),
-                                                placeholder: 'Digite seu ID',
-                                                style: inputStyle,
-                                                required: true
-                                            })
-                                        ),
-                                        h('div', { style: { marginBottom: '24px' } },
-                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'Nova Senha'),
-                                            h('input', {
-                                                type: 'password',
-                                                value: resetData.novaSenha,
-                                                onChange: (e) => setResetData({ ...resetData, novaSenha: e.target.value }),
-                                                placeholder: 'Digite a nova senha',
-                                                style: inputStyle,
-                                                required: true
-                                            })
-                                        ),
-                                        h('button', {
-                                            type: 'submit',
-                                            style: { ...buttonStyle, background: 'linear-gradient(45deg, #228B22, #ffd700)', color: '#000', fontWeight: '900' }
-                                        }, '🔐 Alterar Senha'),
-                                        h('button', {
-                                            type: 'button',
-                                            onClick: () => setIsResetPassword(false),
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Voltar ao Login')
                                     )
@@ -1044,12 +982,12 @@
                             { key: 'comunicacao', label: 'Comunicação', max: 10 },
                             { key: 'relacionamento', label: 'Relacionamento Interpessoal', max: 10 },
                             { key: 'conhecimento', label: 'Conhecimento Técnico', max: 10 },
-                            { key: 'dedicacao', label: 'Dedicação e Comprometimento', max: 10 },
+                            { key: 'dedicacao', label: 'Dedicação e Compromet imento', max: 10 },
                             { key: 'lideranca', label: 'Liderança', max: 10 },
                             { key: 'resolucao', label: 'Resolução de Problemas', max: 10 },
                             { key: 'iniciativa', label: 'Iniciativa', max: 10 },
                             { key: 'etica', label: 'Ética Profissional', max: 10 },
-                            { key: 'membrosOnline', label: 'Quantidade de Membros Online no Painel', max: 10 }
+                            { key: 'membrosOnline', label: 'Quantidade de Membros Online no Painel', type: 'number' }
                         ];
 
                         const perguntasRP = [
@@ -1069,6 +1007,7 @@
                             const perguntas = tipoChecklist === 'staff' ? perguntasStaff : perguntasRP;
                             let total = 0;
                             perguntas.forEach(p => {
+                                if (p.type === 'number') return; // Não conta para nota total
                                 const valor = parseFloat(novoChecklist[p.key]) || 0;
                                 total += valor;
                             });
@@ -1304,12 +1243,12 @@
                                                                     marginBottom: '8px', 
                                                                     fontWeight: '600'
                                                                 } 
-                                                            }, `${pergunta.label} (0-${pergunta.max})`),
+                                                            }, pergunta.type === 'number' ? `${pergunta.label} (Quantidade exata)` : `${pergunta.label} (0-${pergunta.max})`),
                                                             h('input', {
                                                                 type: 'number',
                                                                 value: novoChecklist[pergunta.key],
                                                                 onChange: (e) => setNovoChecklist({ ...novoChecklist, [pergunta.key]: e.target.value }),
-                                                                placeholder: `0-${pergunta.max}`,
+                                                                placeholder: pergunta.type === 'number' ? 'Quantidade exata' : `0-${pergunta.max}`,
                                                                 style: {
                                                                     width: '100%',
                                                                     padding: '12px',
@@ -1321,8 +1260,8 @@
                                                                     fontWeight: '500'
                                                                 },
                                                                 min: '0',
-                                                                max: pergunta.max.toString(),
-                                                                step: '0.5',
+                                                                max: pergunta.type === 'number' ? undefined : pergunta.max.toString(),
+                                                                step: pergunta.type === 'number' ? '1' : '0.5',
                                                                 required: true
                                                             })
                                                         )
@@ -1524,7 +1463,8 @@
                             { key: 'disponibilidade', label: 'Disponibilidade', max: 10 },
                             { key: 'pontualidade', label: 'Pontualidade', max: 10 },
                             { key: 'organizacao', label: 'Organização', max: 10 },
-                            { key: 'proatividade', label: 'Proatividade', max: 10 }
+                            { key: 'proatividade', label: 'Proatividade', max: 10 },
+                            { key: 'membrosOnlinePainel', label: 'Quantidade de Membros Online no Painel', type: 'number' }
                         ];
 
                         const obterPerguntasEspecificas = () => {
@@ -1532,16 +1472,16 @@
                                 // Perguntas específicas por organização RP
                                 const perguntasRPEspecificas = {
                                     igreja: [
-                                        { key: 'frequenciaEventos', label: 'A frequência de eventos religiosos está regular e de acordo com o calendário?', max: 10 },
+                                        { key: 'frequenciaEventos', label: 'A frequência de eventos religiosos está regular?', max: 10 },
                                         { key: 'participacaoComunidade', label: 'Há participação da comunidade nas atividades?', max: 10 },
-                                        { key: 'estruturaTemplo', label: 'A estrutura e manutenção do templo estão adequadas?', max: 10 },
-                                        { key: 'liderReligioso', label: 'O líder religioso está cumprindo com as obrigações previstas?', max: 10 }
+                                        { key: 'estruturaTemplo', label: 'A estrutura do templo está adequada?', max: 10 },
+                                        { key: 'liderReligioso', label: 'O líder religioso cumpre suas obrigações?', max: 10 }
                                     ],
                                     jornal: [
-                                        { key: 'publicacaoRegular', label: 'As matérias estão sendo publicadas com regularidade?', max: 10 },
-                                        { key: 'imparcialidadeReportagens', label: 'Há imparcialidade e clareza nas reportagens?', max: 10 },
-                                        { key: 'equipeAtiva', label: 'A equipe do jornal está ativa e completa?', max: 10 },
-                                        { key: 'pautasAlinhadas', label: 'As pautas estão alinhadas com os acontecimentos do RP?', max: 10 }
+                                        { key: 'publicacaoRegular', label: 'As matérias estão sendo publicadas regularmente?', max: 10 },
+                                        { key: 'imparcialidadeReportagens', label: 'Há imparcialidade nas reportagens?', max: 10 },
+                                        { key: 'equipeAtiva', label: 'A equipe está ativa e completa?', max: 10 },
+                                        { key: 'pautasAlinhadas', label: 'As pautas estão alinhadas com o RP?', max: 10 }
                                     ],
                                     juridico: [
                                         { key: 'processosJulgados', label: 'Os processos estão sendo julgados dentro do prazo?', max: 10 },
@@ -1682,6 +1622,7 @@
                             let total = 0;
                             // Perguntas gerais (sempre incluídas)
                             perguntasGerais.forEach(p => {
+                                if (p.type === 'number') return; // Não conta para nota total
                                 const valor = parseFloat(novaAuditoria[p.key]) || 0;
                                 total += valor;
                             });
@@ -1696,7 +1637,8 @@
 
                         const getNotaMaxima = () => {
                             const perguntasEspecificas = obterPerguntasEspecificas();
-                            return 100 + (perguntasEspecificas.length * 10); // 10 gerais + específicas
+                            const perguntasGeraisQueContam = perguntasGerais.filter(p => p.type !== 'number').length;
+                            return (perguntasGeraisQueContam * 10) + (perguntasEspecificas.length * 10);
                         };
 
                         const handleSubmitAuditoria = (e) => {
@@ -1707,7 +1649,7 @@
                                 return;
                             }
 
-                            const todasGerais = perguntasGerais.every(p => novaAuditoria[p.key] && parseFloat(novaAuditoria[p.key]) >= 0);
+                            const todasGerais = perguntasGerais.every(p => novaAuditoria[p.key] && (p.type === 'number' || parseFloat(novaAuditoria[p.key]) >= 0));
                             const perguntasEspecificas = obterPerguntasEspecificas();
                             const todasEspecificas = perguntasEspecificas.every(p => novaAuditoria[p.key] && parseFloat(novaAuditoria[p.key]) >= 0);
                             
@@ -1973,12 +1915,12 @@
                                                                     marginBottom: '8px', 
                                                                     fontWeight: '600'
                                                                 } 
-                                                            }, `${pergunta.label} (0-${pergunta.max})`),
+                                                            }, pergunta.type === 'number' ? pergunta.label : `${pergunta.label} (0-${pergunta.max})`),
                                                             h('input', {
                                                                 type: 'number',
                                                                 value: novaAuditoria[pergunta.key],
                                                                 onChange: (e) => setNovaAuditoria({ ...novaAuditoria, [pergunta.key]: e.target.value }),
-                                                                placeholder: `0-${pergunta.max}`,
+                                                                placeholder: pergunta.type === 'number' ? 'Quantidade exata' : `0-${pergunta.max}`,
                                                                 style: {
                                                                     width: '100%',
                                                                     padding: '12px',
@@ -1990,8 +1932,8 @@
                                                                     fontWeight: '500'
                                                                 },
                                                                 min: '0',
-                                                                max: pergunta.max.toString(),
-                                                                step: '0.5',
+                                                                max: pergunta.type === 'number' ? undefined : pergunta.max.toString(),
+                                                                step: pergunta.type === 'number' ? '1' : '0.5',
                                                                 required: true
                                                             })
                                                         )
@@ -3106,6 +3048,10 @@
                                 }
                             }
                         };
+
+
+
+
 
                         const handleAprovarItem = (lista, setLista, itemId, statusAprovado) => {
                             setLista(lista.map(item => 
