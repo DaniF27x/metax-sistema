@@ -3042,18 +3042,44 @@
                     const AdminPage = () => {
                         const [activeTab, setActiveTab] = useState('usuarios');
 
-                        const handleAprovarUsuario = (userId) => {
-                            const userToApprove = pendingUsers.find(u => u.id === userId);
+                        const handleAprovarUsuario = async (userId) => {
+                            const userToApprove = users.find(u => u.id === userId && u.status === 'pendente');
                             if (userToApprove) {
-                                setUsers([...users, { ...userToApprove, status: 'aprovado' }]);
-                                setPendingUsers(pendingUsers.filter(u => u.id !== userId));
-                                alert(`✅ Usuário ${userToApprove.nome} aprovado!`);
+                                try {
+                                    // Atualizar no Supabase
+                                    await saveToSupabase('usuarios', { ...userToApprove, status: 'aprovado' }, true);
+                                    
+                                    // Atualizar estado local
+                                    setUsers(users.map(u => 
+                                        u.id === userId ? { ...u, status: 'aprovado' } : u
+                                    ));
+                                    
+                                    alert(`✅ Usuário ${userToApprove.nome} aprovado com sucesso!`);
+                                    refetchUsers(); // Recarregar dados do Supabase
+                                } catch (error) {
+                                    console.error('Erro ao aprovar usuário:', error);
+                                    alert('❌ Erro ao aprovar usuário. Tente novamente.');
+                                }
                             }
                         };
 
-                        const handleReprovarUsuario = (userId) => {
-                            setPendingUsers(pendingUsers.filter(u => u.id !== userId));
-                            alert('❌ Usuário reprovado!');
+                        const handleReprovarUsuario = async (userId) => {
+                            const userToReject = users.find(u => u.id === userId && u.status === 'pendente');
+                            if (userToReject) {
+                                try {
+                                    // Remover do Supabase
+                                    await supabase.from('usuarios').delete().eq('id', userId);
+                                    
+                                    // Remover do estado local
+                                    setUsers(users.filter(u => u.id !== userId));
+                                    
+                                    alert(`❌ Usuário ${userToReject.nome} rejeitado!`);
+                                    refetchUsers(); // Recarregar dados do Supabase
+                                } catch (error) {
+                                    console.error('Erro ao reprovar usuário:', error);
+                                    alert('❌ Erro ao reprovar usuário. Tente novamente.');
+                                }
+                            }
                         };
 
                         const handleAprovarItem = (lista, setLista, itemId, statusAprovado) => {
