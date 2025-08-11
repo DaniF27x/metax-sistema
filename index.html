@@ -3082,6 +3082,31 @@
                             }
                         };
 
+                        const handleExcluirUsuario = async (userId) => {
+                            const userToDelete = users.find(u => u.id === userId && u.status === 'aprovado');
+                            if (userToDelete) {
+                                // Não permitir excluir usuários padrão do sistema
+                                if (['admin001', '7'].includes(userId)) {
+                                    alert('⚠️ Não é possível excluir usuários padrão do sistema!');
+                                    return;
+                                }
+
+                                try {
+                                    // Remover do Supabase
+                                    await supabase.from('usuarios').delete().eq('id', userId);
+                                    
+                                    // Remover do estado local
+                                    setUsers(users.filter(u => u.id !== userId));
+                                    
+                                    alert(`🗑️ Usuário ${userToDelete.nome} excluído permanentemente!`);
+                                    refetchUsers(); // Recarregar dados do Supabase
+                                } catch (error) {
+                                    console.error('Erro ao excluir usuário:', error);
+                                    alert('❌ Erro ao excluir usuário. Tente novamente.');
+                                }
+                            }
+                        };
+
                         const handleAprovarItem = (lista, setLista, itemId, statusAprovado) => {
                             setLista(lista.map(item => 
                                 item.id === itemId || (item.createdAt && item.createdAt === itemId)
@@ -3215,16 +3240,37 @@
                                                                 h('h5', { style: { color: '#228B22', fontSize: '1.1rem', margin: '0 0 5px 0' } }, user.nome),
                                                                 h('p', { style: { color: '#fff', margin: 0 } }, `ID: ${user.id} | ${user.cargo}`)
                                                             ),
-                                                            h('span', { 
-                                                                style: { 
-                                                                    background: '#228B22', 
-                                                                    color: '#fff', 
-                                                                    padding: '4px 12px', 
-                                                                    borderRadius: '15px', 
-                                                                    fontSize: '0.8rem',
-                                                                    fontWeight: '700'
-                                                                } 
-                                                            }, 'ATIVO')
+                                                            h('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } },
+                                                                h('span', { 
+                                                                    style: { 
+                                                                        background: '#228B22', 
+                                                                        color: '#fff', 
+                                                                        padding: '4px 12px', 
+                                                                        borderRadius: '15px', 
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: '700'
+                                                                    } 
+                                                                }, 'ATIVO'),
+                                                                // Não permitir excluir usuários padrão (Admin Sistema e Daniel)
+                                                                !['admin001', '7'].includes(user.id) && h('button', {
+                                                                    onClick: () => {
+                                                                        if (confirm(`⚠️ Tem certeza que deseja EXCLUIR permanentemente o usuário ${user.nome}?\n\nEsta ação não pode ser desfeita!`)) {
+                                                                            handleExcluirUsuario(user.id);
+                                                                        }
+                                                                    },
+                                                                    style: {
+                                                                        background: 'linear-gradient(45deg, #8B0000, #DC143C)',
+                                                                        color: '#fff',
+                                                                        padding: '6px 12px',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '700',
+                                                                        fontSize: '0.8rem',
+                                                                        textTransform: 'uppercase'
+                                                                    }
+                                                                }, '🗑️ Excluir')
+                                                            )
                                                         )
                                                     )
                                                 )
