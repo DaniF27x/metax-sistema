@@ -429,6 +429,8 @@
                     const [currentUser, setCurrentUser] = useState(null);
                     const [currentView, setCurrentView] = useState('login');
                     
+
+                    
                     // Dados do Supabase
                     const [users, setUsers, usersLoading, refetchUsers] = useSupabaseData('usuarios');
                     const [checklists, setChecklists, checklistsLoading, refetchChecklists] = useSupabaseData('checklists');
@@ -1186,7 +1188,8 @@
                                                         h('option', { value: 'policia' }, 'POLÍCIA'),
                                                         h('option', { value: 'prefeitura' }, 'PREFEITURA'),
                                                         h('option', { value: 'gestao_politica' }, 'GESTÃO POLÍTICA'),
-                                                        h('option', { value: 'eleicoes' }, 'ELEIÇÕES')
+                                                        h('option', { value: 'eleicoes' }, 'ELEIÇÕES'),
+                                                        h('option', { value: 'corregedoria' }, 'CORREGEDORIA')
                                                     )
                                                 )
                                             ),
@@ -1449,9 +1452,9 @@
                             interpretacao: '', criatividade: '', adaptacao: '', consistencia: '', narrativa: '', expressaoEmocional: '', improvisacao: '', imersao: '', gestaoConflitosRP: '', construcaoPersonagem: ''
                         });
                         const [mostrarFormulario, setMostrarFormulario] = useState(false);
-                        const [tipoAuditoria, setTipoAuditoria] = useState('staff');
+                        const [tipoAuditoria, setTipoAuditoria] = useState('rp'); // MUDANÇA: Começa em RP para mostrar Corregedoria por padrão
                         const [pastaStaff, setPastaStaff] = useState('social_midia');
-                        const [orgRP, setOrgRP] = useState('igreja');
+                        const [orgRP, setOrgRP] = useState('corregedoria'); // MUDANÇA: Começa em Corregedoria por padrão
 
                         const perguntasGerais = [
                             { key: 'conhecimentoRegras', label: 'Conhecimento das Regras', max: 10 },
@@ -1529,6 +1532,36 @@
                                         { key: 'campanhasAtivas', label: 'Há campanhas ativas para os cargos políticos?', max: 10 },
                                         { key: 'processoTransparente', label: 'O processo eleitoral está ocorrendo de forma transparente?', max: 10 },
                                         { key: 'divulgacaoEleicoes', label: 'A divulgação das eleições está sendo feita adequadamente?', max: 10 }
+                                    ],
+                                    corregedoria: [
+                                        // Perguntas Gerais da Corregedoria (6 questões)
+                                        { key: 'transparenciaProcessos', label: 'Os processos estão sendo conduzidos com transparência e imparcialidade?', max: 10 },
+                                        { key: 'documentacaoCompleta', label: 'A documentação dos casos está completa e organizada?', max: 10 },
+                                        { key: 'prazosAtendidos', label: 'Os prazos legais estão sendo cumpridos adequadamente?', max: 10 },
+                                        { key: 'comunicacaoEfetiva', label: 'A comunicação com as partes envolvidas é clara e efetiva?', max: 10 },
+                                        { key: 'reclamacoesRegistradas', label: 'As reclamações e denúncias estão sendo devidamente registradas?', max: 10 },
+                                        { key: 'fiscalizacaoAtiva', label: 'A fiscalização das condutas está sendo realizada de forma ativa?', max: 10 },
+                                        
+                                        // Perguntas Específicas Policiais (6 questões - marcadas com [POLICIAL])
+                                        { key: 'abusoAutoridade', label: '[POLICIAL] Há registro de casos de abuso de autoridade sendo investigados?', max: 10 },
+                                        { key: 'procedimentosPoliciais', label: '[POLICIAL] Os procedimentos policiais estão sendo seguidos corretamente?', max: 10 },
+                                        { key: 'comportamentoProfissional', label: '[POLICIAL] O comportamento profissional dos agentes está adequado?', max: 10 },
+                                        { key: 'tempoRespostaPolicial', label: '[POLICIAL] O tempo de resposta às denúncias policiais está dentro do padrão?', max: 10 },
+                                        { key: 'equipamentosConduta', label: '[POLICIAL] Os equipamentos e conduta policial estão sendo monitorados?', max: 10 },
+                                        { key: 'treinamentoProcedimentos', label: '[POLICIAL] Há treinamentos regulares sobre procedimentos e ética policial?', max: 10 },
+                                        
+                                        // Perguntas Específicas Jurídicas (6 questões - marcadas com [JURÍDICO])
+                                        { key: 'processosJuridicos', label: '[JURÍDICO] Os processos jurídicos estão tramitando dentro dos prazos legais?', max: 10 },
+                                        { key: 'parcialidadeJulgamentos', label: '[JURÍDICO] Há garantia de imparcialidade nos julgamentos e decisões?', max: 10 },
+                                        { key: 'procedimentosCodigoRP', label: '[JURÍDICO] Os procedimentos do código RP estão sendo respeitados?', max: 10 },
+                                        { key: 'documentacoesJuridicas', label: '[JURÍDICO] As documentações jurídicas estão completas e atualizadas?', max: 10 },
+                                        { key: 'canalDenuncias', label: '[JURÍDICO] O canal de denúncias está funcionando adequadamente?', max: 10 },
+                                        { key: 'atendimentoPublicoJuridico', label: '[JURÍDICO] O atendimento ao público para questões jurídicas é eficiente?', max: 10 },
+                                        
+                                        // Perguntas Comuns (3 questões)
+                                        { key: 'corrupcaoIndices', label: 'Há registro ou suspeita de corrupção sendo investigada?', max: 10 },
+                                        { key: 'tratamentoDiferenciado', label: 'Existe tratamento diferenciado injustificado entre casos similares?', max: 10 },
+                                        { key: 'ordensInternas', label: 'As ordens internas e regulamentos estão sendo cumpridos?', max: 10 }
                                     ]
                                 };
                                 return perguntasRPEspecificas[orgRP] || [];
@@ -1858,7 +1891,8 @@
                                                         h('option', { value: 'policia' }, 'POLÍCIA'),
                                                         h('option', { value: 'prefeitura' }, 'PREFEITURA'),
                                                         h('option', { value: 'gestao_politica' }, 'GESTÃO POLÍTICA'),
-                                                        h('option', { value: 'eleicoes' }, 'ELEIÇÕES')
+                                                        h('option', { value: 'eleicoes' }, 'ELEIÇÕES'),
+                                                        h('option', { value: 'corregedoria' }, 'CORREGEDORIA')
                                                     )
                                                 )
                                             ),
@@ -2980,6 +3014,8 @@
                         );
                     };
 
+
+
                     // Página de Administração (somente CEO/Diretor)
                     const AdminPage = () => {
                         const [activeTab, setActiveTab] = useState('usuarios');
@@ -3422,6 +3458,7 @@
                             return h(FinanceiroPage);
                         case 'legislativo':
                             return h(LegislativoPage);
+
                         case 'admin':
                             return (currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor') 
                                 ? h(AdminPage) 
