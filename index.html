@@ -31,22 +31,134 @@
             overflow: hidden;
         }
         
-        /* Efeito de varredura tecnológica */
+        /* FUMAÇA CINEMATOGRÁFICA DOURADA */
         .loading::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
+            top: -10%;
+            left: -120%;
+            width: 140%;
+            height: 120%;
             background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 215, 0, 0.1), 
-                rgba(255, 215, 0, 0.3), 
-                rgba(255, 215, 0, 0.1), 
-                transparent
+                transparent 0%, 
+                rgba(255, 215, 0, 0.05) 10%,
+                rgba(255, 215, 0, 0.2) 25%,
+                rgba(255, 215, 0, 0.4) 40%,
+                rgba(255, 215, 0, 0.6) 50%,
+                rgba(255, 215, 0, 0.4) 60%,
+                rgba(255, 215, 0, 0.2) 75%,
+                rgba(255, 215, 0, 0.05) 90%,
+                transparent 100%
             );
-            animation: tech-scan 4s infinite;
+            background-size: 200% 100%;
+            animation: cinema-scan-metax 15s infinite;
+            z-index: 10;
+            filter: blur(2px);
+            box-shadow: 
+                0 0 50px rgba(255, 215, 0, 0.3),
+                inset 0 0 100px rgba(255, 215, 0, 0.1);
+        }
+        
+        /* FUMAÇA CINEMATOGRÁFICA VERDE HIPNÓTICA */
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -200%;
+            width: 200%;
+            height: 120%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(0, 255, 0, 0.2) 5%,
+                rgba(34, 139, 34, 0.4) 15%,
+                rgba(50, 205, 50, 0.7) 30%,
+                rgba(0, 255, 0, 0.9) 45%,
+                rgba(50, 205, 50, 1) 50%,
+                rgba(0, 255, 0, 0.9) 55%,
+                rgba(50, 205, 50, 0.7) 70%,
+                rgba(34, 139, 34, 0.4) 85%,
+                rgba(0, 255, 0, 0.2) 95%,
+                transparent 100%
+            );
+            background-size: 300% 100%;
+            animation: cinema-scan-green-dramatic 15s infinite;
+            z-index: 15;
+            filter: blur(1px) brightness(1.3);
+            box-shadow: 
+                0 0 100px rgba(0, 255, 0, 0.8),
+                0 0 200px rgba(50, 205, 50, 0.6),
+                inset 0 0 150px rgba(0, 255, 0, 0.4);
+            opacity: 0.9;
+        }
+        
+        /* TEXTO CINEMATOGRÁFICO COM REVELAR LENTO */
+        .secret-text {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: rgba(255, 215, 0, 0);
+            text-shadow: 
+                0 0 20px rgba(255, 215, 0, 0),
+                0 0 40px rgba(255, 215, 0, 0),
+                0 0 60px rgba(255, 215, 0, 0);
+            opacity: 0;
+            z-index: 15;
+            pointer-events: none;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            letter-spacing: 0.4rem;
+            transition: all 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-align: center;
+            white-space: nowrap;
+            text-transform: uppercase;
+            filter: blur(4px);
+            transform-origin: center;
+        }
+        
+        /* ESTADO REVELADO DO TEXTO */
+        .secret-text.revealed {
+            opacity: 1;
+            color: rgba(255, 215, 0, 0.8);
+            text-shadow: 
+                0 0 15px rgba(255, 215, 0, 0.6),
+                0 0 30px rgba(255, 215, 0, 0.4),
+                0 0 45px rgba(255, 215, 0, 0.2);
+            filter: blur(0px);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        
+        /* ESTADO REVELADO VERDE HIPNÓTICO */
+        .secret-text.revealed.green {
+            color: rgba(0, 255, 0, 0.9);
+            text-shadow: 
+                0 0 25px rgba(0, 255, 0, 0.9),
+                0 0 50px rgba(50, 205, 50, 0.7),
+                0 0 75px rgba(34, 139, 34, 0.5),
+                0 0 100px rgba(0, 255, 0, 0.3);
+            animation: green-text-dramatic-pulse 2s ease-in-out infinite;
+        }
+        
+        /* ANIMAÇÃO DRAMÁTICA DO TEXTO VERDE */
+        @keyframes green-text-dramatic-pulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1.05);
+                text-shadow: 
+                    0 0 25px rgba(0, 255, 0, 0.9),
+                    0 0 50px rgba(50, 205, 50, 0.7),
+                    0 0 75px rgba(34, 139, 34, 0.5),
+                    0 0 100px rgba(0, 255, 0, 0.3);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.15);
+                text-shadow: 
+                    0 0 35px rgba(0, 255, 0, 1),
+                    0 0 70px rgba(50, 205, 50, 0.9),
+                    0 0 105px rgba(34, 139, 34, 0.7),
+                    0 0 140px rgba(0, 255, 0, 0.5),
+                    0 0 200px rgba(0, 255, 0, 0.2);
+            }
         }
         
         /* Grid tecnológico animado */
@@ -129,7 +241,7 @@
             background-size: 300% 100%;
             border-radius: 20px;
             animation: 
-                progress-fill 3s ease-out,
+                progress-fill 10s ease-out,
                 gradient-flow 2s linear infinite;
             box-shadow: 
                 0 0 20px rgba(255, 215, 0, 0.6),
@@ -146,11 +258,64 @@
             text-align: center;
         }
         
-        /* Animações */
-        @keyframes tech-scan {
-            0% { left: -100%; }
-            100% { left: 100%; }
+        /* EFEITO CINEMATOGRÁFICO AVANÇADO */
+        @keyframes cinema-scan-metax {
+            0% { 
+                left: -120%; 
+                opacity: 0;
+                transform: scaleX(0.5);
+            }
+            15% {
+                left: -80%;
+                opacity: 0.8;
+                transform: scaleX(1.2);
+            }
+            35% { 
+                left: 20%; 
+                opacity: 1;
+                transform: scaleX(1);
+            }
+            50% {
+                left: 120%;
+                opacity: 0.8;
+                transform: scaleX(0.8);
+            }
+            100% { 
+                left: 150%; 
+                opacity: 0;
+                transform: scaleX(0.3);
+            }
         }
+        
+        @keyframes cinema-scan-ilusion {
+            0%, 60% { 
+                left: -120%; 
+                opacity: 0;
+                transform: scaleX(0.3);
+            }
+            65% { 
+                left: -80%; 
+                opacity: 1;
+                transform: scaleX(1.5);
+            }
+            75% { 
+                left: 20%; 
+                opacity: 1;
+                transform: scaleX(1);
+            }
+            85% {
+                left: 120%;
+                opacity: 1;
+                transform: scaleX(0.8);
+            }
+            100% { 
+                left: 150%; 
+                opacity: 0;
+                transform: scaleX(0.2);
+            }
+        }
+        
+
         
         @keyframes grid-pulse {
             0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -323,12 +488,25 @@
                 filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1));
             }
         }
+        
+        /* 🌫️ ANIMAÇÃO DA FUMAÇA VERDE HIPNÓTICA */
+        @keyframes green-glow-pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                filter: drop-shadow(0 0 25px rgba(0, 255, 0, 0.9));
+            }
+            50% { 
+                transform: scale(1.08); 
+                filter: drop-shadow(0 0 50px rgba(34, 139, 34, 1)) drop-shadow(0 0 80px rgba(0, 255, 0, 0.6));
+            }
+        }
     </style>
 </head>
 <body>
     <div id="root">
         <div class="loading">
             <div class="tech-grid"></div>
+            <div class="secret-text" id="secret-text">GROUP METAX</div>
             <div class="loading-icon">
                 <div class="metax-logo">X</div>
             </div>
@@ -344,7 +522,69 @@
     <script>
         console.log('🔥 Iniciando MetaX v6.0 - Sistema Tecnológico de Auditoria...');
         
-        // Aguardar carregamento completo com tela tecnológica de 3 segundos
+        // 🎬 EFEITO CINEMATOGRÁFICO SINCRONIZADO COM A FUMAÇA
+        const secretTextElement = document.getElementById('secret-text');
+        const texts = ['GROUP METAX', 'ILUSION CITY'];
+        
+        // FUNÇÃO PARA REVELAR TEXTO DE FORMA CINEMATOGRÁFICA
+        const revealText = (text, isGreen = false, delay = 0) => {
+            setTimeout(() => {
+                secretTextElement.textContent = text;
+                
+                // Adicionar classes cinematográficas
+                secretTextElement.classList.add('revealed');
+                if (isGreen) {
+                    secretTextElement.classList.add('green');
+                } else {
+                    secretTextElement.classList.remove('green');
+                }
+                
+                console.log(`🎬 Revelando: ${text} ${isGreen ? '(Verde Hipnótico)' : '(Dourado)'}`);
+            }, delay);
+        };
+        
+        // FUNÇÃO PARA OCULTAR TEXTO DE FORMA CINEMATOGRÁFICA
+        const hideText = (delay = 0) => {
+            setTimeout(() => {
+                secretTextElement.classList.remove('revealed', 'green');
+                console.log('🌫️ Ocultando texto...');
+            }, delay);
+        };
+        
+        // 🎭 SEQUÊNCIA CINEMATOGRÁFICA SINCRONIZADA (10 segundos de ciclo)
+        
+        // PRIMEIRA REVELAÇÃO: GROUP METAX (sincronizada com fumaça dourada)
+        setTimeout(() => {
+            revealText(texts[0], false); // Dourado
+        }, 1500); // Sincronizado com 15% da animação (10s * 0.15 = 1.5s)
+        
+        // OCULTAR PRIMEIRO TEXTO
+        setTimeout(() => {
+            hideText();
+        }, 4000); // Oculta aos 4s para dar tempo para o segundo
+        
+        // SEGUNDA REVELAÇÃO: ILUSION CITY (sincronizada com fumaça verde DRAMÁTICA)
+        setTimeout(() => {
+            revealText(texts[1], true); // Verde hipnótico
+        }, 5000); // Aparece aos 5s (50% de 10s = momento máximo da fumaça verde)
+        
+        // OCULTAR SEGUNDO TEXTO
+        setTimeout(() => {
+            hideText();
+        }, 8500); // Oculta aos 8.5s (ainda dentro dos 10s de loading)
+        
+        // REPETIR CICLO A CADA 15 SEGUNDOS (sincronizado com animações)
+        setInterval(() => {
+            // GROUP METAX (com fumaça dourada)
+            setTimeout(() => revealText(texts[0], false), 1500);
+            setTimeout(() => hideText(), 4000);
+            
+            // ILUSION CITY (com fumaça verde DRAMÁTICA)
+            setTimeout(() => revealText(texts[1], true), 5000);
+            setTimeout(() => hideText(), 8500);
+        }, 15000);
+        
+        // Aguardar carregamento completo com tela tecnológica de 10 segundos
         setTimeout(() => {
             try {
                 if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
@@ -4395,7 +4635,7 @@
                     </div>
                 `;
             }
-        }, 3000); // 3 segundos para carregamento tecnológico
+        }, 8000); // 8 segundos para carregamento tecnológico
     </script>
 </body>
 </html>
