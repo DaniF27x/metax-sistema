@@ -441,6 +441,119 @@
                     // Separar usuários aprovados e pendentes
                     const approvedUsers = users.filter(u => u.status === 'aprovado');
                     const pendingUsers = users.filter(u => u.status === 'pendente');
+                    
+                    // Função para obter aprovadores disponíveis
+                    const getAprovadores = (tipoItem = 'geral') => {
+                        if (tipoItem === 'lei') {
+                            // Para leis, apenas Diretores podem aprovar
+                            return approvedUsers.filter(u => u.cargo === 'Diretor');
+                        }
+                        // Para outros itens, CEO e Diretor podem aprovar
+                        return approvedUsers.filter(u => 
+                            u.cargo === 'CEO' || u.cargo === 'Diretor'
+                        );
+                    };
+
+                    // Componente para mostrar aprovadores disponíveis
+                    const AprovadoresInfo = ({ item, tipo = 'geral' }) => {
+                        if (item.status !== 'aguardando_aprovacao' && item.status !== 'pendente') return null;
+                        
+                        const aprovadores = getAprovadores(tipo);
+                        
+                        return h('div', {
+                            style: {
+                                marginTop: '15px',
+                                padding: '15px',
+                                background: 'rgba(255, 215, 0, 0.1)',
+                                border: '2px solid rgba(255, 215, 0, 0.3)',
+                                borderRadius: '10px'
+                            }
+                        },
+                            h('h5', {
+                                style: {
+                                    color: '#ffd700',
+                                    margin: '0 0 10px 0',
+                                    fontSize: '1rem',
+                                    fontWeight: '700'
+                                }
+                            }, '👥 Quem pode aprovar:'),
+                            h('div', {
+                                style: {
+                                    color: '#fff',
+                                    fontSize: '0.9rem'
+                                }
+                            },
+                                aprovadores.length > 0 
+                                    ? aprovadores.map(aprovador => 
+                                        h('div', {
+                                            key: aprovador.id,
+                                            style: {
+                                                margin: '2px 0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }
+                                        },
+                                            h('span', null, '•'),
+                                            h('strong', { style: { color: '#ffd700' } }, aprovador.cargo),
+                                            h('span', null, ' - '),
+                                            h('span', null, aprovador.nome),
+                                            h('span', { style: { color: '#228B22', fontSize: '0.8rem' } }, ` (ID: ${aprovador.id})`)
+                                        )
+                                    )
+                                    : h('span', { style: { color: '#DC143C' } }, 'Nenhum aprovador disponível no momento')
+                            ),
+                            h('p', {
+                                style: {
+                                    color: '#228B22',
+                                    fontSize: '0.85rem',
+                                    margin: '8px 0 0 0',
+                                    fontStyle: 'italic'
+                                }
+                            }, '💡 Se demorar muito, você pode entrar em contato diretamente!')
+                        );
+                    };
+
+                    // Componente para mostrar histórico de aprovação
+                    const HistoricoAprovacao = ({ item }) => {
+                        if (item.status === 'aguardando_aprovacao' || item.status === 'pendente') return null;
+                        
+                        const isAprovado = item.status === 'aprovado' || item.status === 'aprovada' || item.status === 'ativo';
+                        const isReprovado = item.status === 'reprovado' || item.status === 'reprovada';
+                        
+                        return h('div', {
+                            style: {
+                                marginTop: '15px',
+                                padding: '12px',
+                                background: isAprovado 
+                                    ? 'rgba(34, 139, 34, 0.1)' 
+                                    : 'rgba(220, 20, 60, 0.1)',
+                                border: `2px solid ${isAprovado ? 'rgba(34, 139, 34, 0.3)' : 'rgba(220, 20, 60, 0.3)'}`,
+                                borderRadius: '8px'
+                            }
+                        },
+                            isAprovado && [
+                                item.aprovador && h('p', {
+                                    key: 'aprovador',
+                                    style: { color: '#228B22', margin: '0 0 5px 0', fontSize: '0.9rem', fontWeight: '600' }
+                                }, `✅ Aprovado por: ${item.aprovador}`),
+                                item.dataAprovacao && h('p', {
+                                    key: 'data',
+                                    style: { color: '#228B22', margin: '0', fontSize: '0.85rem' }
+                                }, `📅 Data: ${new Date(item.dataAprovacao).toLocaleDateString('pt-BR')} às ${new Date(item.dataAprovacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`)
+                            ],
+                            isReprovado && [
+                                item.reprovador && h('p', {
+                                    key: 'reprovador',
+                                    style: { color: '#DC143C', margin: '0 0 5px 0', fontSize: '0.9rem', fontWeight: '600' }
+                                }, `❌ Reprovado por: ${item.reprovador}`),
+                                item.dataReprovacao && h('p', {
+                                    key: 'data',
+                                    style: { color: '#DC143C', margin: '0', fontSize: '0.85rem' }
+                                }, `📅 Data: ${new Date(item.dataReprovacao).toLocaleDateString('pt-BR')} às ${new Date(item.dataReprovacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`)
+                            ]
+                        );
+                    };
 
                     // Inicializar usuários padrão
                     useEffect(() => {
@@ -1422,7 +1535,9 @@
                                                 checklist.observacao && h('div', { style: { marginTop: '15px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px' } },
                                                     h('strong', { style: { color: '#ffd700' } }, 'Observação: '),
                                                     h('span', { style: { color: '#fff' } }, checklist.observacao)
-                                                )
+                                                ),
+                                                h(AprovadoresInfo, { item: checklist }),
+                                                h(HistoricoAprovacao, { item: checklist })
                                             )
                                         ) : h('div', {
                                             style: {
@@ -2177,7 +2292,9 @@
                                                 auditoria.observacao && h('div', { style: { marginTop: '15px', padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px' } },
                                                     h('strong', { style: { color: '#ffd700' } }, 'Observação: '),
                                                     h('span', { style: { color: '#fff' } }, auditoria.observacao)
-                                                )
+                                                ),
+                                                h(AprovadoresInfo, { item: auditoria }),
+                                                h(HistoricoAprovacao, { item: auditoria })
                                             )
                                         ) : h('div', {
                                             style: {
@@ -2762,7 +2879,9 @@
                                                 h('div', { style: { padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px' } },
                                                     h('strong', { style: { color: '#ffd700' } }, 'Justificativa: '),
                                                     h('span', { style: { color: '#fff' } }, solicitacao.justificativa)
-                                                )
+                                                ),
+                                                h(AprovadoresInfo, { item: solicitacao }),
+                                                h(HistoricoAprovacao, { item: solicitacao })
                                             )
                                         ) : h('div', {
                                             style: {
@@ -2957,7 +3076,9 @@
                                                 h('div', { style: { marginTop: 20 } },
                                                     h('button', { onClick:()=>setModalLeitura(sol), style: { background: 'linear-gradient(45deg, #ffd700, #228B22)', color: '#000', border: 'none', borderRadius: 8, padding: '12px 24px', fontWeight: 'bold', marginRight: 12, cursor: 'pointer' } }, 'Visualizar/Analisar'),
                                                     !podeAprovar && h('span', { style: { color: '#f59e0b', fontWeight: '600' } }, '⚠️ Somente Diretoria/CEO podem aprovar')
-                                                )
+                                                ),
+                                                h(AprovadoresInfo, { item: sol, tipo: 'lei' }),
+                                                h(HistoricoAprovacao, { item: sol })
                                             )
                                         ),
                                         modalLeitura && h('div', {
@@ -3501,7 +3622,9 @@
                                                 h('div', { style: { padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px' } },
                                                     h('strong', { style: { color: '#ffd700' } }, 'Motivo: '),
                                                     h('span', { style: { color: '#fff' } }, item.motivo)
-                                                )
+                                                ),
+                                                h(AprovadoresInfo, { item: item }),
+                                                h(HistoricoAprovacao, { item: item })
                                             )
                                         ) : h('div', {
                                             style: {
