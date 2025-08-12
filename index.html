@@ -436,6 +436,7 @@
                     const [checklists, setChecklists, checklistsLoading, refetchChecklists] = useSupabaseData('checklists');
                     const [auditorias, setAuditorias, auditoriasLoading, refetchAuditorias] = useSupabaseData('auditorias');
                     const [solicitacoesFinanceiras, setSolicitacoesFinanceiras, financeirasLoading, refetchFinanceiras] = useSupabaseData('solicitacoes_financeiras');
+                    const [topDoMes, setTopDoMes, topDoMesLoading, refetchTopDoMes] = useSupabaseData('top_do_mes');
                     
                     // Separar usuários aprovados e pendentes
                     const approvedUsers = users.filter(u => u.status === 'aprovado');
@@ -844,6 +845,7 @@
                                 { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
                                 { id: 'checklist', label: '✅ Checklist', icon: '✅' },
                                 { id: 'auditoria', label: '🔍 Auditoria', icon: '🔍' },
+                                { id: 'topdomes', label: '🏆 Top do Mês', icon: '🏆' },
                                 { id: 'painel', label: '🏙️ Painel da Cidade', icon: '🏙️' },
                                 { id: 'financeiro', label: '💸 Painel Financeiro', icon: '💸' },
                                 { id: 'legislativo', label: '📘 Legislativo Digital', icon: '📘' },
@@ -1043,7 +1045,9 @@
                                 orgRP: tipoChecklist === 'rp' ? orgRPChecklist : null,
                                 nota: notaTotal,
                                 notaMaxima: 100,
-                                status: 'aguardando_aprovacao',
+                                status: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? 'aprovado' : 'aguardando_aprovacao',
+                                aprovador: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? currentUser.nome : null,
+                                dataAprovacao: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? new Date().toISOString() : null,
                                 createdAt: new Date().toISOString(),
                                 type: 'checklist'
                             };
@@ -1055,7 +1059,11 @@
                                 interpretacao: '', criatividade: '', adaptacao: '', consistencia: '', interacao: '', narrativa: '', emocional: '', improvisacao: '', imersao: '', conflito: ''
                             });
                             setMostrarFormulario(false);
-                            alert('✅ Checklist criado e enviado para aprovação!');
+                            if (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') {
+                                alert('✅ Checklist criado e aprovado automaticamente!');
+                            } else {
+                                alert('✅ Checklist criado e enviado para aprovação!');
+                            }
                         };
 
                         const meusChecklists = checklists.filter(c => c.autorId === currentUser.id);
@@ -1704,7 +1712,9 @@
                                 orgRP: tipoAuditoria === 'rp' ? orgRP : null,
                                 nota: notaTotal,
                                 notaMaxima: notaMaxima,
-                                status: 'aguardando_aprovacao',
+                                status: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? 'aprovada' : 'aguardando_aprovacao',
+                                aprovador: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? currentUser.nome : null,
+                                dataAprovacao: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? new Date().toISOString() : null,
                                 createdAt: new Date().toISOString(),
                                 type: 'auditoria'
                             };
@@ -1717,7 +1727,11 @@
                                 interpretacao: '', criatividade: '', adaptacao: '', consistencia: '', narrativa: '', expressaoEmocional: '', improvisacao: '', imersao: '', gestaoConflitosRP: '', construcaoPersonagem: ''
                             });
                             setMostrarFormulario(false);
-                            alert('✅ Auditoria criada e enviada para aprovação!');
+                            if (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') {
+                                alert('✅ Auditoria criada e aprovada automaticamente!');
+                            } else {
+                                alert('✅ Auditoria criada e enviada para aprovação!');
+                            }
                         };
 
                         const minhasAuditorias = auditorias.filter(a => a.autorId === currentUser.id);
@@ -2399,7 +2413,9 @@
                                 autorId: currentUser.id,
                                 autorNome: currentUser.nome,
                                 autorCargo: currentUser.cargo,
-                                status: 'aguardando_aprovacao',
+                                status: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? 'aprovada' : 'aguardando_aprovacao',
+                                aprovador: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? currentUser.nome : null,
+                                dataAprovacao: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? new Date().toISOString() : null,
                                 createdAt: new Date().toISOString(),
                                 id: Date.now().toString()
                             };
@@ -2407,7 +2423,11 @@
                             setSolicitacoesFinanceiras([...solicitacoesFinanceiras, solicitacao]);
                             setNovaSolicitacao({ tipo: 'hack', descricao: '', valor: '', justificativa: '', idCorrupto: '', nomeCorrupto: '' });
                             setMostrarFormulario(false);
-                            alert('✅ Solicitação financeira enviada para aprovação!');
+                            if (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') {
+                                alert('✅ Solicitação financeira aprovada automaticamente!');
+                            } else {
+                                alert('✅ Solicitação financeira enviada para aprovação!');
+                            }
                         };
 
                         const minhasSolicitacoes = solicitacoesFinanceiras.filter(s => s.autorId === currentUser.id);
@@ -3014,11 +3034,510 @@
                         );
                     };
 
+                    // ===== SISTEMA TOP DO MÊS =====
+                    const TopDoMesPage = () => {
+                        const [novoTopDoMes, setNovoTopDoMes] = useState({
+                            tipo: 'staff', participa_de: '', nome_destaque: '', id_destaque: '', 
+                            foto_url: '', nome_indicador: '', id_indicador: '', motivo: ''
+                        });
+                        const [mostrarFormulario, setMostrarFormulario] = useState(false);
+                        const [filtro, setFiltro] = useState('todos');
+                        const [fotoUpload, setFotoUpload] = useState(null);
+                        
+                        // Lista local de Top do Mês
+                        const [topDoMesList, setTopDoMesList] = useState(() => {
+                            const stored = localStorage.getItem('metax_top_do_mes');
+                            return stored ? JSON.parse(stored) : [];
+                        });
+                        
+                        // Atualizar localStorage quando a lista mudar
+                        useEffect(() => {
+                            localStorage.setItem('metax_top_do_mes', JSON.stringify(topDoMesList));
+                        }, [topDoMesList]);
 
+                        // Função para verificar vencimentos automaticamente
+                        const verificarVencimentos = () => {
+                            const hoje = new Date();
+                            const vencidos = topDoMesList.filter(item => {
+                                if (item.status !== 'ativo') return false;
+                                const dataVencimento = new Date(item.data_proxima_avaliacao);
+                                return dataVencimento <= hoje;
+                            });
+
+                            if (vencidos.length > 0) {
+                                // Marcar como "pendente_reavaliacao"
+                                vencidos.forEach(item => {
+                                    setTopDoMesList(prevState => 
+                                        prevState.map(t => 
+                                            t.id === item.id 
+                                                ? { ...t, status: 'pendente_reavaliacao' }
+                                                : t
+                                        )
+                                    );
+                                });
+                            }
+                            return vencidos;
+                        };
+
+                        // Verificar vencimentos ao carregar a página (apenas uma vez)
+                        useEffect(() => {
+                            verificarVencimentos();
+                        }, []); // Array vazio para executar apenas uma vez
+
+                        // Handle upload de foto
+                        const handleFotoUpload = (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                if (file.size > 5 * 1024 * 1024) { // 5MB
+                                    alert('⚠️ Arquivo muito grande! Máximo 5MB.');
+                                    return;
+                                }
+                                setFotoUpload(file);
+                                // Simular URL da foto (em produção, seria upload real)
+                                const fakeUrl = `foto_${Date.now()}_${file.name}`;
+                                setNovoTopDoMes({ ...novoTopDoMes, foto_url: fakeUrl });
+                            }
+                        };
+
+                        const handleSubmitTopDoMes = async (e) => {
+                            e.preventDefault();
+                            
+                            if (!novoTopDoMes.participa_de || !novoTopDoMes.nome_destaque || !novoTopDoMes.id_destaque || 
+                                !novoTopDoMes.nome_indicador || !novoTopDoMes.id_indicador || !novoTopDoMes.motivo) {
+                                alert('⚠️ Preencha todos os campos obrigatórios!');
+                                return;
+                            }
+
+                            const hoje = new Date();
+                            const proximaAvaliacao = new Date(hoje);
+                            proximaAvaliacao.setMonth(proximaAvaliacao.getMonth() + 1);
+
+                            const topDoMesData = {
+                                ...novoTopDoMes,
+                                id: Date.now().toString(),
+                                autorId: currentUser.id,
+                                autorNome: currentUser.nome,
+                                autorCargo: currentUser.cargo,
+                                status: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? 'ativo' : 'aguardando_aprovacao',
+                                data_inicio: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? hoje.toISOString() : null,
+                                data_proxima_avaliacao: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? proximaAvaliacao.toISOString() : null,
+                                aprovador: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? currentUser.nome : null,
+                                dataAprovacao: (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') ? hoje.toISOString() : null,
+                                createdAt: hoje.toISOString(),
+                                type: 'top_do_mes'
+                            };
+
+                            try {
+                                // Adicionar ao estado local primeiro
+                                setTopDoMesList([...topDoMesList, topDoMesData]);
+                                
+                                // Salvar no localStorage como backup
+                                const stored = JSON.parse(localStorage.getItem('metax_top_do_mes') || '[]');
+                                stored.push(topDoMesData);
+                                localStorage.setItem('metax_top_do_mes', JSON.stringify(stored));
+                                
+                                // Tentar salvar no Supabase (não bloqueante)
+                                try {
+                                    await saveToSupabase('top_do_mes', topDoMesData);
+                                } catch (supabaseError) {
+                                    console.log('Salvamento no Supabase falhou, usando localStorage:', supabaseError);
+                                }
+                                
+                                // Reset form
+                                setNovoTopDoMes({
+                                    tipo: 'staff', participa_de: '', nome_destaque: '', id_destaque: '', 
+                                    foto_url: '', nome_indicador: '', id_indicador: '', motivo: ''
+                                });
+                                setFotoUpload(null);
+                                setMostrarFormulario(false);
+                                if (currentUser.cargo === 'CEO' || currentUser.cargo === 'Diretor') {
+                                    alert(`✅ Top do Mês aprovado automaticamente! Válido até ${proximaAvaliacao.toLocaleDateString('pt-BR')}`);
+                                } else {
+                                    alert('✅ Top do Mês enviado para aprovação!');
+                                }
+                            } catch (error) {
+                                console.error('Erro ao salvar:', error);
+                                alert('❌ Erro ao salvar. Tente novamente.');
+                            }
+                        };
+
+                        // Filtrar itens
+                        const itensFiltrados = topDoMesList.filter(item => {
+                            if (filtro === 'todos') return true;
+                            if (filtro === 'meus') return item.autorId === currentUser.id;
+                            if (filtro === 'vencidos') return item.status === 'pendente_reavaliacao';
+                            return item.status === filtro;
+                        });
+
+                        // Contadores para estatísticas
+                        const contadores = {
+                            ativos: topDoMesList.filter(t => t.status === 'ativo').length,
+                            pendentes: topDoMesList.filter(t => t.status === 'aguardando_aprovacao').length,
+                            vencidos: topDoMesList.filter(t => t.status === 'pendente_reavaliacao').length,
+                            meus: topDoMesList.filter(t => t.autorId === currentUser.id).length
+                        };
+
+                        return h('div', { style: { minHeight: '100vh', background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)' } },
+                            h(Header),
+                            h('div', { style: { display: 'flex' } },
+                                h(Sidebar),
+                                h('main', { style: { flex: 1, padding: '40px' } },
+                                    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' } },
+                                        h('h2', { 
+                                            style: { 
+                                                fontSize: '2.8rem', 
+                                                fontWeight: '900', 
+                                                background: 'linear-gradient(45deg, #ffd700, #fff)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                backgroundClip: 'text',
+                                                margin: 0,
+                                                textShadow: '0 0 30px rgba(255, 215, 0, 0.5)'
+                                            } 
+                                        }, '🏆 Sistema Top do Mês'),
+                                        h('button', {
+                                            onClick: () => setMostrarFormulario(!mostrarFormulario),
+                                            style: {
+                                                background: 'linear-gradient(45deg, #ffd700, #228B22)',
+                                                color: '#000',
+                                                padding: '16px 32px',
+                                                border: '3px solid #ffd700',
+                                                borderRadius: '15px',
+                                                cursor: 'pointer',
+                                                fontWeight: '900',
+                                                fontSize: '1.1rem',
+                                                textTransform: 'uppercase',
+                                                boxShadow: '0 0 25px rgba(255, 215, 0, 0.5)'
+                                            }
+                                        }, mostrarFormulario ? '❌ Cancelar' : '➕ Nova Indicação')
+                                    ),
+
+                                    // Estatísticas em cards
+                                    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' } },
+                                        [
+                                            { titulo: 'Top Ativos', valor: contadores.ativos, cor: '#228B22', icon: '🏆' },
+                                            { titulo: 'Aguardando Aprovação', valor: contadores.pendentes, cor: '#ffd700', icon: '⏳' },
+                                            { titulo: 'Vencidos', valor: contadores.vencidos, cor: '#DC143C', icon: '⚠️' },
+                                            { titulo: 'Minhas Indicações', valor: contadores.meus, cor: '#4169E1', icon: '👤' }
+                                        ].map((stat, index) =>
+                                            h('div', {
+                                                key: index,
+                                                style: {
+                                                    background: 'rgba(0,0,0,0.8)',
+                                                    backdropFilter: 'blur(10px)',
+                                                    border: `3px solid ${stat.cor}`,
+                                                    borderRadius: '15px',
+                                                    padding: '25px',
+                                                    textAlign: 'center',
+                                                    boxShadow: `0 0 20px ${stat.cor}40`
+                                                }
+                                            },
+                                                h('div', { style: { fontSize: '2.5rem', marginBottom: '10px' } }, stat.icon),
+                                                h('h3', { style: { color: stat.cor, fontSize: '1.1rem', marginBottom: '8px', fontWeight: '700' } }, stat.titulo),
+                                                h('p', { style: { fontSize: '2rem', fontWeight: '900', color: '#fff', margin: 0 } }, stat.valor)
+                                            )
+                                        )
+                                    ),
+
+                                    // Filtros
+                                    h('div', { style: { display: 'flex', gap: '15px', marginBottom: '30px', flexWrap: 'wrap' } },
+                                        ['todos', 'ativo', 'aguardando_aprovacao', 'pendente_reavaliacao', 'meus', 'vencidos'].map(f => 
+                                            h('button', {
+                                                key: f,
+                                                onClick: () => setFiltro(f),
+                                                style: {
+                                                    padding: '10px 20px',
+                                                    background: filtro === f ? 'linear-gradient(45deg, #ffd700, #228B22)' : 'transparent',
+                                                    color: filtro === f ? '#000' : '#ffd700',
+                                                    border: '2px solid #ffd700',
+                                                    borderRadius: '10px',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '700',
+                                                    textTransform: 'uppercase',
+                                                    fontSize: '0.9rem'
+                                                }
+                                            }, f === 'todos' ? 'Todos' : f === 'meus' ? 'Meus' : f === 'vencidos' ? 'Vencidos' : f.replace(/_/g, ' '))
+                                        )
+                                    ),
+
+                                    // Formulário de nova indicação
+                                    mostrarFormulario && h('div', {
+                                        style: {
+                                            background: 'rgba(0,0,0,0.8)',
+                                            backdropFilter: 'blur(10px)',
+                                            border: '3px solid #ffd700',
+                                            borderRadius: '20px',
+                                            padding: '40px',
+                                            marginBottom: '40px',
+                                            boxShadow: '0 0 40px rgba(255, 215, 0, 0.4)'
+                                        }
+                                    },
+                                        h('h3', { 
+                                            style: { 
+                                                color: '#ffd700', 
+                                                fontSize: '1.8rem', 
+                                                marginBottom: '30px', 
+                                                fontWeight: '800',
+                                                textShadow: '0 0 15px rgba(255, 215, 0, 0.5)'
+                                            } 
+                                        }, '🏆 Nova Indicação Top do Mês'),
+                                        h('form', { onSubmit: handleSubmitTopDoMes },
+                                            // Primeira linha: Tipo e Participa de
+                                            h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' } },
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Tipo *'),
+                                                    h('div', { style: { display: 'flex', gap: '20px' } },
+                                                        ['staff', 'roleplay'].map(tipo =>
+                                                            h('label', {
+                                                                key: tipo,
+                                                                style: { display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', cursor: 'pointer', fontSize: '1.1rem', fontWeight: '600' }
+                                                            },
+                                                                h('input', {
+                                                                    type: 'radio',
+                                                                    name: 'tipo',
+                                                                    value: tipo,
+                                                                    checked: novoTopDoMes.tipo === tipo,
+                                                                    onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, tipo: e.target.value }),
+                                                                    style: { transform: 'scale(1.2)' }
+                                                                }),
+                                                                tipo === 'staff' ? '👤 Staff' : '🎭 Roleplay'
+                                                            )
+                                                        )
+                                                    )
+                                                ),
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Participa de *'),
+                                                    h('input', {
+                                                        type: 'text',
+                                                        value: novoTopDoMes.participa_de,
+                                                        onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, participa_de: e.target.value }),
+                                                        placeholder: 'Ex: Corregedoria, Igreja, Hospital...',
+                                                        style: {
+                                                            width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px',
+                                                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500'
+                                                        },
+                                                        required: true
+                                                    })
+                                                )
+                                            ),
+                                            // Segunda linha: Dados do destaque
+                                            h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' } },
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#228B22', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Nome do Destaque *'),
+                                                    h('input', {
+                                                        type: 'text',
+                                                        value: novoTopDoMes.nome_destaque,
+                                                        onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, nome_destaque: e.target.value }),
+                                                        placeholder: 'Nome completo da pessoa',
+                                                        style: {
+                                                            width: '100%', padding: '16px', border: '2px solid #228B22', borderRadius: '12px',
+                                                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500'
+                                                        },
+                                                        required: true
+                                                    })
+                                                ),
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#228B22', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'ID do Destaque *'),
+                                                    h('input', {
+                                                        type: 'text',
+                                                        value: novoTopDoMes.id_destaque,
+                                                        onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, id_destaque: e.target.value }),
+                                                        placeholder: 'ID da pessoa',
+                                                        style: {
+                                                            width: '100%', padding: '16px', border: '2px solid #228B22', borderRadius: '12px',
+                                                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500'
+                                                        },
+                                                        required: true
+                                                    })
+                                                )
+                                            ),
+                                            // Terceira linha: Upload de foto
+                                            h('div', { style: { marginBottom: '25px' } },
+                                                h('label', { style: { display: 'block', color: '#4169E1', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Foto do Destaque (Opcional)'),
+                                                h('input', {
+                                                    type: 'file',
+                                                    accept: 'image/*',
+                                                    onChange: handleFotoUpload,
+                                                    style: {
+                                                        width: '100%', padding: '16px', border: '2px solid #4169E1', borderRadius: '12px',
+                                                        background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px'
+                                                    }
+                                                }),
+                                                fotoUpload && h('p', { style: { color: '#4169E1', marginTop: '8px', fontSize: '0.9rem' } }, `📸 Arquivo selecionado: ${fotoUpload.name}`)
+                                            ),
+                                            // Quarta linha: Dados de quem indicou
+                                            h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' } },
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#DC143C', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Nome de Quem Indicou *'),
+                                                    h('input', {
+                                                        type: 'text',
+                                                        value: novoTopDoMes.nome_indicador,
+                                                        onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, nome_indicador: e.target.value }),
+                                                        placeholder: 'Seu nome ou de quem indicou',
+                                                        style: {
+                                                            width: '100%', padding: '16px', border: '2px solid #DC143C', borderRadius: '12px',
+                                                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500'
+                                                        },
+                                                        required: true
+                                                    })
+                                                ),
+                                                h('div', null,
+                                                    h('label', { style: { display: 'block', color: '#DC143C', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'ID de Quem Indicou *'),
+                                                    h('input', {
+                                                        type: 'text',
+                                                        value: novoTopDoMes.id_indicador,
+                                                        onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, id_indicador: e.target.value }),
+                                                        placeholder: 'ID de quem indicou',
+                                                        style: {
+                                                            width: '100%', padding: '16px', border: '2px solid #DC143C', borderRadius: '12px',
+                                                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500'
+                                                        },
+                                                        required: true
+                                                    })
+                                                )
+                                            ),
+                                            // Quinta linha: Motivo
+                                            h('div', { style: { marginBottom: '25px' } },
+                                                h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '10px', fontWeight: '700', fontSize: '1.1rem' } }, 'Motivo / Observações *'),
+                                                h('textarea', {
+                                                    value: novoTopDoMes.motivo,
+                                                    onChange: (e) => setNovoTopDoMes({ ...novoTopDoMes, motivo: e.target.value }),
+                                                    placeholder: 'Descreva o motivo da indicação, trabalho exemplar, dedicação...',
+                                                    style: {
+                                                        width: '100%', padding: '16px', border: '2px solid #ffd700', borderRadius: '12px',
+                                                        background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '16px', fontWeight: '500',
+                                                        minHeight: '120px', resize: 'vertical'
+                                                    },
+                                                    required: true
+                                                })
+                                            ),
+                                            // Botões
+                                            h('div', { style: { display: 'flex', gap: '20px' } },
+                                                h('button', {
+                                                    type: 'submit',
+                                                    style: {
+                                                        flex: 1, background: 'linear-gradient(45deg, #228B22, #ffd700)', color: '#000',
+                                                        padding: '16px', border: '2px solid #228B22', borderRadius: '12px',
+                                                        cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem', textTransform: 'uppercase'
+                                                    }
+                                                }, '🏆 Enviar Indicação'),
+                                                h('button', {
+                                                    type: 'button',
+                                                    onClick: () => setMostrarFormulario(false),
+                                                    style: {
+                                                        background: 'transparent', color: '#ffd700', padding: '16px 32px',
+                                                        border: '2px solid #ffd700', borderRadius: '12px',
+                                                        cursor: 'pointer', fontWeight: '700', fontSize: '1.1rem'
+                                                    }
+                                                }, 'Cancelar')
+                                            )
+                                        )
+                                    ),
+
+                                    // Lista de Top do Mês
+                                    h('div', { style: { display: 'grid', gap: '25px' } },
+                                        itensFiltrados.length > 0 ? itensFiltrados.map((item, index) =>
+                                            h('div', {
+                                                key: index,
+                                                style: {
+                                                    background: item.status === 'ativo' 
+                                                        ? 'linear-gradient(135deg, rgba(34, 139, 34, 0.2), rgba(255, 215, 0, 0.1))'
+                                                        : item.status === 'pendente_reavaliacao'
+                                                        ? 'linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(255, 0, 0, 0.1))'
+                                                        : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 0, 0, 0.3))',
+                                                    backdropFilter: 'blur(10px)',
+                                                    border: `3px solid ${item.status === 'ativo' ? '#228B22' : item.status === 'pendente_reavaliacao' ? '#DC143C' : '#ffd700'}`,
+                                                    borderRadius: '20px',
+                                                    padding: '30px',
+                                                    boxShadow: item.status === 'ativo' 
+                                                        ? '0 0 30px rgba(34, 139, 34, 0.4)'
+                                                        : item.status === 'pendente_reavaliacao'
+                                                        ? '0 0 30px rgba(220, 20, 60, 0.4)'
+                                                        : '0 0 30px rgba(255, 215, 0, 0.4)'
+                                                }
+                                            },
+                                                h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' } },
+                                                    h('h4', { 
+                                                        style: { 
+                                                            color: '#ffd700', 
+                                                            fontSize: '1.5rem', 
+                                                            margin: 0, 
+                                                            fontWeight: '800'
+                                                        } 
+                                                    }, `🏆 ${item.nome_destaque} - ${item.participa_de.toUpperCase()}`),
+                                                    h('span', {
+                                                        style: {
+                                                            background: item.status === 'ativo' 
+                                                                ? 'linear-gradient(45deg, #228B22, #32CD32)'
+                                                                : item.status === 'pendente_reavaliacao'
+                                                                ? 'linear-gradient(45deg, #DC143C, #FF6347)'
+                                                                : 'linear-gradient(45deg, #ffd700, #FFA500)',
+                                                            color: item.status === 'ativo' ? '#fff' : '#000',
+                                                            padding: '8px 16px',
+                                                            borderRadius: '20px',
+                                                            fontWeight: '700',
+                                                            fontSize: '0.9rem',
+                                                            textTransform: 'uppercase'
+                                                        }
+                                                    }, 
+                                                    item.status === 'ativo' ? '🏆 ATIVO' 
+                                                        : item.status === 'pendente_reavaliacao' ? '⚠️ VENCIDO'
+                                                        : item.status === 'aguardando_aprovacao' ? '⏳ AGUARDANDO'
+                                                        : '❌ INATIVO'
+                                                    )
+                                                ),
+                                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', color: '#fff', marginBottom: '15px' } },
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Tipo: '), item.tipo === 'staff' ? 'Staff' : 'Roleplay'),
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#228B22' } }, 'ID Destaque: '), item.id_destaque),
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#DC143C' } }, 'Indicado por: '), `${item.nome_indicador} (ID: ${item.id_indicador})`),
+                                                    item.data_inicio && h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#4169E1' } }, 'Início: '), new Date(item.data_inicio).toLocaleDateString('pt-BR')),
+                                                    item.data_proxima_avaliacao && h('p', { style: { margin: 0 } }, h('strong', { style: { color: item.status === 'pendente_reavaliacao' ? '#DC143C' : '#9370DB' } }, 'Próxima Avaliação: '), new Date(item.data_proxima_avaliacao).toLocaleDateString('pt-BR')),
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Criado em: '), new Date(item.createdAt).toLocaleDateString('pt-BR'))
+                                                ),
+                                                item.foto_url && h('div', { style: { marginBottom: '15px' } },
+                                                    h('strong', { style: { color: '#4169E1' } }, 'Foto: '),
+                                                    h('span', { style: { color: '#fff' } }, item.foto_url)
+                                                ),
+                                                h('div', { style: { padding: '15px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px' } },
+                                                    h('strong', { style: { color: '#ffd700' } }, 'Motivo: '),
+                                                    h('span', { style: { color: '#fff' } }, item.motivo)
+                                                )
+                                            )
+                                        ) : h('div', {
+                                            style: {
+                                                textAlign: 'center', padding: '60px', background: 'rgba(0,0,0,0.3)',
+                                                borderRadius: '20px', border: '2px dashed #ffd700'
+                                            }
+                                        },
+                                            h('p', { 
+                                                style: { 
+                                                    color: '#ffd700', 
+                                                    fontSize: '1.5rem', 
+                                                    margin: 0, 
+                                                    fontWeight: '700'
+                                                } 
+                                            }, '🏆 Nenhum Top do Mês encontrado para o filtro selecionado')
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    };
 
                     // Página de Administração (somente CEO/Diretor)
                     const AdminPage = () => {
                         const [activeTab, setActiveTab] = useState('usuarios');
+                        
+                        // Estado local para Top do Mês na administração
+                        const [topDoMesAdmin, setTopDoMesAdmin] = useState(() => {
+                            const stored = localStorage.getItem('metax_top_do_mes');
+                            return stored ? JSON.parse(stored) : [];
+                        });
+                        
+                        // Sincronizar com localStorage quando mudar
+                        useEffect(() => {
+                            localStorage.setItem('metax_top_do_mes', JSON.stringify(topDoMesAdmin));
+                        }, [topDoMesAdmin]);
 
                         const handleAprovarUsuario = async (userId) => {
                             const userToApprove = users.find(u => u.id === userId && u.status === 'pendente');
@@ -3127,7 +3646,7 @@
 
                                     // Tabs de navegação
                                     h('div', { style: { display: 'flex', gap: '20px', marginBottom: '40px' } },
-                                        ['usuarios', 'checklists', 'auditorias', 'financeiro'].map(tab =>
+                                        ['usuarios', 'checklists', 'auditorias', 'financeiro', 'topdomes'].map(tab =>
                                             h('button', {
                                                 key: tab,
                                                 onClick: () => setActiveTab(tab),
@@ -3435,6 +3954,234 @@
                                                     )
                                                 )
                                             ) : h('p', { style: { color: '#ffd700', textAlign: 'center', fontSize: '1.2rem' } }, '✅ Nenhuma solicitação financeira pendente')
+                                    ),
+
+                                    activeTab === 'topdomes' && h('div', null,
+                                        h('h3', { style: { color: '#ffd700', fontSize: '1.8rem', marginBottom: '30px', fontWeight: '800' } }, '🏆 Gerenciar Top do Mês'),
+                                        
+                                        // Seção de vencimentos pendentes (ALERTAS ESPECIAIS)
+                                        (() => {
+                                            const vencimentos = topDoMesAdmin.filter(t => t.status === 'pendente_reavaliacao');
+                                            if (vencimentos.length === 0) return null;
+                                            
+                                            return h('div', { style: { marginBottom: '40px' } },
+                                                h('h4', { 
+                                                    style: { 
+                                                        color: '#DC143C', 
+                                                        fontSize: '1.4rem', 
+                                                        marginBottom: '20px',
+                                                        textShadow: '0 0 10px rgba(220, 20, 60, 0.5)'
+                                                    } 
+                                                }, '⚠️ Top do Mês com Prazo Vencido - REQUER AÇÃO IMEDIATA'),
+                                                h('div', { style: { display: 'grid', gap: '20px' } },
+                                                    vencimentos.map(item =>
+                                                        h('div', {
+                                                            key: item.id,
+                                                            style: {
+                                                                background: 'linear-gradient(135deg, rgba(220, 20, 60, 0.3), rgba(255, 0, 0, 0.2))',
+                                                                border: '3px solid #DC143C',
+                                                                borderRadius: '15px',
+                                                                padding: '25px',
+                                                                boxShadow: '0 0 20px rgba(220, 20, 60, 0.4)',
+                                                                animation: 'pulse 2s infinite'
+                                                            }
+                                                        },
+                                                            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' } },
+                                                                h('div', null,
+                                                                    h('h5', { style: { color: '#ffd700', fontSize: '1.3rem', margin: '0 0 5px 0' } }, 
+                                                                        `🏆 ${item.nome_destaque} - ${item.participa_de.toUpperCase()}`
+                                                                    ),
+                                                                    h('p', { style: { color: '#DC143C', margin: '5px 0', fontWeight: '700' } }, 
+                                                                        `⏰ VENCEU EM: ${new Date(item.data_proxima_avaliacao).toLocaleDateString('pt-BR')}`
+                                                                    ),
+                                                                    h('p', { style: { color: '#fff', margin: 0 } }, 
+                                                                        `Indicado por: ${item.nome_indicador} | Motivo: ${item.motivo}`
+                                                                    )
+                                                                ),
+                                                                h('button', {
+                                                                    onClick: () => {
+                                                                        if (confirm(`Deseja marcar o Top do Mês de ${item.nome_destaque} como "Novo Top do Mês necessário"?\n\nIsso permitirá que uma nova indicação seja feita para ${item.participa_de}.`)) {
+                                                                            // Marcar como inativo para permitir nova indicação
+                                                                            const updatedItem = { ...item, status: 'inativo', dataFinalizacao: new Date().toISOString() };
+                                                                            const updatedList = topDoMesAdmin.map(t => t.id === item.id ? updatedItem : t);
+                                                                            setTopDoMesAdmin(updatedList);
+                                                                            alert(`✅ ${item.nome_destaque} marcado como finalizado. Nova indicação pode ser feita para ${item.participa_de}!`);
+                                                                        }
+                                                                    },
+                                                                    style: {
+                                                                        background: 'linear-gradient(45deg, #ffd700, #228B22)',
+                                                                        color: '#000',
+                                                                        padding: '12px 24px',
+                                                                        border: 'none',
+                                                                        borderRadius: '10px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '900',
+                                                                        textTransform: 'uppercase',
+                                                                        boxShadow: '0 0 15px rgba(255, 215, 0, 0.5)'
+                                                                    }
+                                                                }, '✅ CRIAR NOVO TOP DO MÊS')
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            );
+                                        })(),
+                                        
+                                        // Pendentes de aprovação  
+                                        (() => {
+                                            return topDoMesAdmin.filter(t => t.status === 'aguardando_aprovacao').length > 0 ? 
+                                                h('div', { style: { marginBottom: '40px' } },
+                                                    h('h4', { style: { color: '#ffd700', fontSize: '1.4rem', marginBottom: '20px' } }, '⏳ Aguardando Aprovação'),
+                                                    h('div', { style: { display: 'grid', gap: '20px' } },
+                                                        topDoMesAdmin.filter(t => t.status === 'aguardando_aprovacao').map(topItem =>
+                                                        h('div', {
+                                                            key: topItem.id,
+                                                            style: {
+                                                                background: 'rgba(255, 215, 0, 0.1)',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '15px',
+                                                                padding: '25px'
+                                                            }
+                                                        },
+                                                            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' } },
+                                                                h('h5', { style: { color: '#ffd700', fontSize: '1.3rem', margin: 0 } }, 
+                                                                    `🏆 ${topItem.nome_destaque} - ${topItem.participa_de.toUpperCase()}`
+                                                                ),
+                                                                h('div', { style: { display: 'flex', gap: '15px' } },
+                                                                    h('button', {
+                                                                        onClick: () => {
+                                                                            const hoje = new Date();
+                                                                            const proximaAvaliacao = new Date(hoje);
+                                                                            proximaAvaliacao.setMonth(proximaAvaliacao.getMonth() + 1);
+                                                                            
+                                                                            const itemAprovado = {
+                                                                                ...topItem,
+                                                                                status: 'ativo',
+                                                                                data_inicio: hoje.toISOString(),
+                                                                                data_proxima_avaliacao: proximaAvaliacao.toISOString(),
+                                                                                aprovador: currentUser.nome,
+                                                                                dataAprovacao: hoje.toISOString()
+                                                                            };
+                                                                            
+                                                                            const updatedList = topDoMesAdmin.map(t => t.id === topItem.id ? itemAprovado : t);
+                                                                            setTopDoMesAdmin(updatedList);
+                                                                            alert(`✅ Top do Mês ${topItem.nome_destaque} aprovado! Válido até ${proximaAvaliacao.toLocaleDateString('pt-BR')}`);
+                                                                        },
+                                                                        style: {
+                                                                            background: 'linear-gradient(45deg, #228B22, #32CD32)',
+                                                                            color: '#fff',
+                                                                            padding: '8px 16px',
+                                                                            border: 'none',
+                                                                            borderRadius: '8px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '700'
+                                                                        }
+                                                                    }, '✅ Aprovar'),
+                                                                    h('button', {
+                                                                        onClick: () => {
+                                                                            const justificativa = prompt('Digite a justificativa da reprovação:');
+                                                                            if (justificativa) {
+                                                                                const itemReprovado = {
+                                                                                    ...topItem,
+                                                                                    status: 'reprovado',
+                                                                                    justificativa_reprovacao: justificativa,
+                                                                                    reprovador: currentUser.nome,
+                                                                                    dataReprovacao: new Date().toISOString()
+                                                                                };
+                                                                                const updatedListReproved = topDoMesAdmin.map(t => t.id === topItem.id ? itemReprovado : t);
+                                                                                setTopDoMesAdmin(updatedListReproved);
+                                                                                alert(`❌ Top do Mês ${topItem.nome_destaque} reprovado!`);
+                                                                            }
+                                                                        },
+                                                                        style: {
+                                                                            background: 'linear-gradient(45deg, #DC143C, #FF6347)',
+                                                                            color: '#fff',
+                                                                            padding: '8px 16px',
+                                                                            border: 'none',
+                                                                            borderRadius: '8px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '700'
+                                                                        }
+                                                                    }, '❌ Reprovar')
+                                                                )
+                                                            ),
+                                                            h('div', { style: { color: '#fff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' } },
+                                                                h('p', { style: { margin: 0 } }, h('strong', null, 'Tipo: '), topItem.tipo === 'staff' ? 'Staff' : 'Roleplay'),
+                                                                h('p', { style: { margin: 0 } }, h('strong', null, 'ID Destaque: '), topItem.id_destaque),
+                                                                h('p', { style: { margin: 0 } }, h('strong', null, 'Indicado por: '), `${topItem.nome_indicador} (${topItem.id_indicador})`),
+                                                                h('p', { style: { margin: 0 } }, h('strong', null, 'Autor Sistema: '), `${topItem.autorNome} (${topItem.autorCargo})`),
+                                                                h('p', { style: { margin: 0 } }, h('strong', null, 'Data Criação: '), new Date(topItem.createdAt).toLocaleDateString('pt-BR'))
+                                                            ),
+                                                            topItem.foto_url && h('div', { style: { marginTop: '10px' } },
+                                                                h('strong', { style: { color: '#4169E1' } }, 'Foto: '),
+                                                                h('span', { style: { color: '#fff' } }, topItem.foto_url)
+                                                            ),
+                                                            h('div', { style: { marginTop: '15px', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' } },
+                                                                h('strong', { style: { color: '#ffd700' } }, 'Motivo: '),
+                                                                h('span', { style: { color: '#fff' } }, topItem.motivo)
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                ) : null;
+                                        })(),
+                                        
+                                        // Estatísticas gerais
+                                        (() => {
+                                            return h('div', { style: { marginTop: '40px' } },
+                                                h('h4', { style: { color: '#228B22', fontSize: '1.4rem', marginBottom: '20px' } }, '📊 Estatísticas Gerais'),
+                                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' } },
+                                                    [
+                                                        { label: '🏆 Total Ativos', valor: topDoMesAdmin.filter(t => t.status === 'ativo').length, cor: '#228B22' },
+                                                        { label: '⏳ Aguardando Aprovação', valor: topDoMesAdmin.filter(t => t.status === 'aguardando_aprovacao').length, cor: '#ffd700' },
+                                                        { label: '⚠️ Vencidos', valor: topDoMesAdmin.filter(t => t.status === 'pendente_reavaliacao').length, cor: '#DC143C' },
+                                                        { label: '📊 Total Staff', valor: topDoMesAdmin.filter(t => t.tipo === 'staff').length, cor: '#4169E1' },
+                                                        { label: '🎭 Total Roleplay', valor: topDoMesAdmin.filter(t => t.tipo === 'roleplay').length, cor: '#9370DB' },
+                                                        { label: '📈 Total Geral', valor: topDoMesAdmin.length, cor: '#ffd700' }
+                                                    ].map((stat, index) =>
+                                                    h('div', {
+                                                        key: index,
+                                                        style: {
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            padding: '15px',
+                                                            background: `rgba(${stat.cor === '#228B22' ? '34, 139, 34' : stat.cor === '#ffd700' ? '255, 215, 0' : stat.cor === '#DC143C' ? '220, 20, 60' : stat.cor === '#4169E1' ? '65, 105, 225' : stat.cor === '#9370DB' ? '147, 112, 219' : '255, 215, 0'}, 0.1)`,
+                                                            borderRadius: '10px',
+                                                            color: '#fff',
+                                                            border: `2px solid ${stat.cor}`
+                                                        }
+                                                    },
+                                                        h('span', null, stat.label),
+                                                        h('strong', { style: { color: stat.cor } }, stat.valor)
+                                                    )
+                                                    )
+                                                )
+                                            );
+                                        })(),
+                                        
+                                        // Mensagem quando não há pendências
+                                        (() => {
+                                            return topDoMesAdmin.filter(t => t.status === 'aguardando_aprovacao' || t.status === 'pendente_reavaliacao').length === 0 && 
+                                                h('div', { 
+                                                    style: { 
+                                                        textAlign: 'center', 
+                                                        padding: '40px', 
+                                                        background: 'rgba(34, 139, 34, 0.1)',
+                                                        borderRadius: '15px',
+                                                        border: '2px solid #228B22',
+                                                        marginTop: '20px'
+                                                    } 
+                                                },
+                                                    h('p', { 
+                                                        style: { 
+                                                            color: '#228B22', 
+                                                            fontSize: '1.3rem', 
+                                                            margin: 0, 
+                                                            fontWeight: '700'
+                                                        } 
+                                                    }, '✅ Não há Top do Mês pendente de ação administrativa')
+                                                );
+                                        })()
                                     )
                                 )
                             )
@@ -3452,6 +4199,8 @@
                             return h(ChecklistPage);
                         case 'auditoria':
                             return h(AuditoriaPage);
+                        case 'topdomes':
+                            return h(TopDoMesPage);
                         case 'painel':
                             return h(PainelCidadePage);
                         case 'financeiro':
