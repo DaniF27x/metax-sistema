@@ -816,10 +816,31 @@
                             }
                         ];
 
-                        if (users.length === 0) {
-                            setUsers(defaultUsers);
+                        // Se não há usuários carregados do Supabase, usar localStorage ou padrão
+                        if (users.length === 0 && !usersLoading) {
+                            const storedUsers = localStorage.getItem('metax_usuarios');
+                            if (storedUsers) {
+                                try {
+                                    const parsedUsers = JSON.parse(storedUsers);
+                                    // Garantir que usuários padrão existam
+                                    const allUsers = [...defaultUsers];
+                                    parsedUsers.forEach(user => {
+                                        if (!allUsers.find(u => u.id === user.id)) {
+                                            allUsers.push(user);
+                                        }
+                                    });
+                                    setUsers(allUsers);
+                                    localStorage.setItem('metax_usuarios', JSON.stringify(allUsers));
+                                } catch (error) {
+                                    console.error('Erro ao carregar usuários do localStorage:', error);
+                                    setUsers(defaultUsers);
+                                }
+                            } else {
+                                setUsers(defaultUsers);
+                                localStorage.setItem('metax_usuarios', JSON.stringify(defaultUsers));
+                            }
                         }
-                    }, []);
+                    }, [users.length, usersLoading]);
 
                     // Componente de Login
                     const LoginPage = () => {
@@ -828,6 +849,40 @@
                         const [registerData, setRegisterData] = useState({
                             nome: '', id: '', senha: '', cargo: 'Staff Geral'
                         });
+                        const [idStatus, setIdStatus] = useState(''); // Para mostrar status do ID
+
+                        // Função para gerar ID aleatório único
+                        const generateUniqueId = () => {
+                            let newId;
+                            let attempts = 0;
+                            do {
+                                newId = Math.floor(10000 + Math.random() * 90000).toString(); // Gera número de 5 dígitos
+                                attempts++;
+                            } while (users.find(u => u.id === newId) && attempts < 100);
+                            
+                            if (attempts >= 100) {
+                                // Se não conseguir gerar em 100 tentativas, usa timestamp
+                                newId = Date.now().toString().slice(-6);
+                            }
+                            
+                            setRegisterData({ ...registerData, id: newId });
+                            setIdStatus('✅ ID único gerado automaticamente!');
+                            setTimeout(() => setIdStatus(''), 3000);
+                        };
+
+                        // Função para verificar se ID já existe
+                        const checkIdExists = (id) => {
+                            if (!id) {
+                                setIdStatus('');
+                                return;
+                            }
+                            const exists = users.find(u => u.id === id);
+                            if (exists) {
+                                setIdStatus('❌ Este ID já está em uso! Escolha outro ou gere automaticamente.');
+                            } else {
+                                setIdStatus('✅ ID disponível!');
+                            }
+                        };
 
                         const handleLogin = async (e) => {
                             e.preventDefault();
@@ -850,30 +905,69 @@
                         const handleRegister = async (e) => {
                             e.preventDefault();
                             
+                            console.log('Iniciando registro com dados:', registerData);
+                            
                             if (!registerData.nome || !registerData.id || !registerData.senha) {
-                                alert('⚠️ Preencha todos os campos!');
+                                alert('⚠️ Preencha todos os campos obrigatórios!');
                                 return;
                             }
 
+                            // Verificação mais rigorosa de ID duplicado
                             const userExists = users.find(u => u.id === registerData.id);
+                            console.log('Verificando usuário existente:', { userExists, totalUsers: users.length });
+                            
                             if (userExists) {
-                                alert('❌ ID já existe!');
+                                alert('❌ Este ID já está em uso! Use o botão "Gerar ID Automático" para obter um ID único.');
+                                setIdStatus('❌ ID já em uso!');
                                 return;
                             }
 
                             const newUser = {
                                 ...registerData,
-                                status: 'pendente'
+                                status: 'pendente',
+                                createdAt: new Date().toISOString()
                             };
 
                             try {
-                                await saveToSupabase('usuarios', newUser);
-                                refetchUsers(); // Recarregar lista de usuários
-                                alert('✅ Cadastro enviado para aprovação!');
+                                console.log('Tentando salvar usuário:', newUser);
+                                
+                                // Sempre salvar no localStorage primeiro para garantir
+                                const stored = JSON.parse(localStorage.getItem('metax_usuarios') || '[]');
+                                stored.push(newUser);
+                                localStorage.setItem('metax_usuarios', JSON.stringify(stored));
+                                console.log('Usuário salvo no localStorage');
+                                
+                                // Atualizar a lista local de usuários imediatamente
+                                setUsers([...users, newUser]);
+                                console.log('Lista de usuários atualizada');
+                                
+                                // Tentar salvar no Supabase em background (sem bloquear)
+                                saveToSupabase('usuarios', newUser).catch(error => {
+                                    console.log('Erro Supabase (não crítico):', error);
+                                });
+                                
+                                // Mensagem de sucesso
+                                alert(`✅ CADASTRO REALIZADO COM SUCESSO!
+
+📋 DADOS PARA LOGIN (APÓS APROVAÇÃO):
+• ID: ${registerData.id}
+• Senha: ${registerData.senha}
+
+⚠️ IMPORTANTE: 
+• Aguarde a aprovação do seu cadastro
+• Use exatamente estes dados para fazer login
+• Guarde estas informações em local seguro!
+
+🕐 Status: Aguardando aprovação da administração`);
+                                
                                 setIsRegister(false);
                                 setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
+                                setIdStatus('');
+                                console.log('Registro finalizado com sucesso');
+                                
                             } catch (error) {
-                                alert('❌ Erro ao registrar usuário. Tente novamente.');
+                                console.error('Erro crítico no registro:', error);
+                                alert(`❌ Erro ao registrar usuário: ${error.message || 'Erro desconhecido'}. Tente novamente.`);
                             }
                         };
 
@@ -1027,9 +1121,33 @@
                                         }, 'Entrar no Sistema'),
                                         h('button', {
                                             type: 'button',
-                                            onClick: () => setIsRegister(true),
+                                            onClick: () => {
+                                                setIsRegister(true);
+                                                setIdStatus('');
+                                            },
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Criar Nova Conta'),
+
+                                        // Informação sobre IDs
+                                        h('div', {
+                                            style: {
+                                                marginTop: '20px',
+                                                padding: '15px',
+                                                background: 'rgba(255, 215, 0, 0.1)',
+                                                border: '1px solid rgba(255, 215, 0, 0.3)',
+                                                borderRadius: '10px',
+                                                textAlign: 'center'
+                                            }
+                                        },
+                                            h('p', {
+                                                style: {
+                                                    color: '#ffd700',
+                                                    fontSize: '0.9rem',
+                                                    margin: 0,
+                                                    fontWeight: '600'
+                                                }
+                                            }, '💡 Dica: Use o botão "Gerar ID" no cadastro para evitar conflitos!')
+                                        )
 
                                     )
                                 ) : (
@@ -1047,15 +1165,65 @@
                                             })
                                         ),
                                         h('div', { style: { marginBottom: '20px' } },
-                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'ID Único'),
-                                            h('input', {
-                                                type: 'text',
-                                                value: registerData.id,
-                                                onChange: (e) => setRegisterData({ ...registerData, id: e.target.value }),
-                                                placeholder: 'Escolha um ID único',
-                                                style: inputStyle,
-                                                required: true
-                                            })
+                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'ID Único para Login'),
+                                            h('div', { style: { display: 'flex', gap: '10px', alignItems: 'stretch' } },
+                                                h('input', {
+                                                    type: 'text',
+                                                    value: registerData.id,
+                                                    onChange: (e) => {
+                                                        setRegisterData({ ...registerData, id: e.target.value });
+                                                        checkIdExists(e.target.value);
+                                                    },
+                                                    onBlur: (e) => checkIdExists(e.target.value),
+                                                    placeholder: 'Digite ou gere automaticamente',
+                                                    style: { ...inputStyle, flex: 1 },
+                                                    required: true
+                                                }),
+                                                h('button', {
+                                                    type: 'button',
+                                                    onClick: generateUniqueId,
+                                                    style: {
+                                                        background: 'linear-gradient(45deg, #228B22, #32CD32)',
+                                                        color: '#000',
+                                                        padding: '12px 20px',
+                                                        border: '2px solid #228B22',
+                                                        borderRadius: '10px',
+                                                        cursor: 'pointer',
+                                                        fontWeight: '800',
+                                                        fontSize: '0.9rem',
+                                                        whiteSpace: 'nowrap',
+                                                        boxShadow: '0 0 15px rgba(34, 139, 34, 0.4)',
+                                                        transition: 'all 0.3s ease'
+                                                    }
+                                                }, '🎲 Gerar ID')
+                                            ),
+                                            // Status do ID
+                                            idStatus && h('div', {
+                                                style: {
+                                                    marginTop: '8px',
+                                                    padding: '8px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    background: idStatus.includes('❌') 
+                                                        ? 'rgba(220, 20, 60, 0.2)' 
+                                                        : 'rgba(34, 139, 34, 0.2)',
+                                                    border: `2px solid ${idStatus.includes('❌') ? '#DC143C' : '#228B22'}`,
+                                                    color: idStatus.includes('❌') ? '#FF6B6B' : '#32CD32'
+                                                }
+                                            }, idStatus),
+                                            // Explicação sobre o ID
+                                            h('div', {
+                                                style: {
+                                                    marginTop: '8px',
+                                                    padding: '10px',
+                                                    background: 'rgba(255, 215, 0, 0.1)',
+                                                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.85rem',
+                                                    color: '#ffd700'
+                                                }
+                                            }, '💡 Este ID será usado para fazer login após a aprovação. Guarde-o bem!')
                                         ),
                                         h('div', { style: { marginBottom: '20px' } },
                                             h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'Senha'),
@@ -1081,13 +1249,55 @@
                                                 )
                                             )
                                         ),
+                                        // Orientações importantes
+                                        h('div', {
+                                            style: {
+                                                marginBottom: '25px',
+                                                padding: '20px',
+                                                background: 'rgba(34, 139, 34, 0.1)',
+                                                border: '2px solid rgba(34, 139, 34, 0.3)',
+                                                borderRadius: '15px'
+                                            }
+                                        },
+                                            h('h4', {
+                                                style: {
+                                                    color: '#32CD32',
+                                                    fontSize: '1.1rem',
+                                                    margin: '0 0 10px 0',
+                                                    fontWeight: '800',
+                                                    textAlign: 'center'
+                                                }
+                                            }, '📋 IMPORTANTE - DADOS PARA LOGIN'),
+                                            h('div', { style: { color: '#fff', fontSize: '0.95rem', lineHeight: '1.5' } },
+                                                h('p', { style: { margin: '5px 0' } }, `🆔 Seu ID: ${registerData.id || '[Gere ou digite um ID]'}`),
+                                                h('p', { style: { margin: '5px 0' } }, `🔑 Sua Senha: ${registerData.senha || '[Digite sua senha]'}`),
+                                                h('div', { style: { marginTop: '10px', padding: '8px', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 215, 0, 0.3)' } },
+                                                    h('strong', { style: { color: '#ffd700' } }, '⚠️ Anote estes dados! '),
+                                                    h('span', { style: { color: '#fff' } }, 'Você precisará deles para fazer login após a aprovação.')
+                                                )
+                                            )
+                                        ),
                                         h('button', {
                                             type: 'submit',
-                                            style: { ...buttonStyle, background: 'linear-gradient(45deg, #228B22, #ffd700)', color: '#000', fontWeight: '900' }
-                                        }, 'Registrar'),
+                                            disabled: idStatus.includes('❌') || !registerData.id,
+                                            style: { 
+                                                ...buttonStyle, 
+                                                background: (idStatus.includes('❌') || !registerData.id) 
+                                                    ? 'rgba(128, 128, 128, 0.5)' 
+                                                    : 'linear-gradient(45deg, #228B22, #ffd700)', 
+                                                color: (idStatus.includes('❌') || !registerData.id) ? '#666' : '#000', 
+                                                fontWeight: '900',
+                                                cursor: (idStatus.includes('❌') || !registerData.id) ? 'not-allowed' : 'pointer',
+                                                opacity: (idStatus.includes('❌') || !registerData.id) ? 0.6 : 1
+                                            }
+                                        }, '✅ Registrar para Aprovação'),
                                         h('button', {
                                             type: 'button',
-                                            onClick: () => setIsRegister(false),
+                                            onClick: () => {
+                                                setIsRegister(false);
+                                                setIdStatus('');
+                                                setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
+                                            },
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Voltar ao Login')
                                     )
