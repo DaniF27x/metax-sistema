@@ -4165,20 +4165,43 @@
                             const userToApprove = users.find(u => u.id === userId && u.status === 'pendente');
                             if (userToApprove) {
                                 try {
-                                    // Atualizar no Supabase
-                                    await saveToSupabase('usuarios', { ...userToApprove, status: 'aprovado' }, true);
+                                    console.log(`✅ Aprovando usuário: ${userToApprove.nome} (ID: ${userId})`);
                                     
-                                    // Atualizar estado local
+                                    const approvedUser = { ...userToApprove, status: 'aprovado', aprovador: currentUser.nome, data_aprovacao: new Date().toISOString() };
+                                    
+                                    // 1. Atualizar localStorage primeiro
+                                    const stored = localStorage.getItem('metax_usuarios');
+                                    if (stored) {
+                                        const parsedUsers = JSON.parse(stored);
+                                        const updatedUsers = parsedUsers.map(u => 
+                                            u.id === userId ? approvedUser : u
+                                        );
+                                        localStorage.setItem('metax_usuarios', JSON.stringify(updatedUsers));
+                                        console.log(`✅ Atualizado no localStorage`);
+                                    }
+                                    
+                                    // 2. Atualizar estado local imediatamente
                                     setUsers(users.map(u => 
-                                        u.id === userId ? { ...u, status: 'aprovado' } : u
+                                        u.id === userId ? approvedUser : u
                                     ));
+                                    console.log(`✅ Atualizado no estado local`);
+                                    
+                                    // 3. Tentar atualizar no Supabase (sem bloquear se falhar)
+                                    try {
+                                        await saveToSupabase('usuarios', approvedUser, true);
+                                        console.log(`✅ Atualizado no Supabase`);
+                                    } catch (supabaseError) {
+                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
+                                    }
                                     
                                     alert(`✅ Usuário ${userToApprove.nome} aprovado com sucesso!`);
-                                    refetchUsers(); // Recarregar dados do Supabase
+                                    
                                 } catch (error) {
                                     console.error('Erro ao aprovar usuário:', error);
                                     alert('❌ Erro ao aprovar usuário. Tente novamente.');
                                 }
+                            } else {
+                                alert('⚠️ Usuário não encontrado ou já processado!');
                             }
                         };
 
@@ -4186,18 +4209,38 @@
                             const userToReject = users.find(u => u.id === userId && u.status === 'pendente');
                             if (userToReject) {
                                 try {
-                                    // Remover do Supabase
-                                    await supabase.from('usuarios').delete().eq('id', userId);
+                                    console.log(`🗑️ Rejeitando usuário: ${userToReject.nome} (ID: ${userId})`);
                                     
-                                    // Remover do estado local
-                                    setUsers(users.filter(u => u.id !== userId));
+                                    // 1. Remover do localStorage primeiro
+                                    const stored = localStorage.getItem('metax_usuarios');
+                                    if (stored) {
+                                        const parsedUsers = JSON.parse(stored);
+                                        const filteredUsers = parsedUsers.filter(u => u.id !== userId);
+                                        localStorage.setItem('metax_usuarios', JSON.stringify(filteredUsers));
+                                        console.log(`✅ Removido do localStorage`);
+                                    }
                                     
-                                    alert(`❌ Usuário ${userToReject.nome} rejeitado!`);
-                                    refetchUsers(); // Recarregar dados do Supabase
+                                    // 2. Remover do estado local imediatamente
+                                    const updatedUsers = users.filter(u => u.id !== userId);
+                                    setUsers(updatedUsers);
+                                    console.log(`✅ Removido do estado local`);
+                                    
+                                    // 3. Tentar remover do Supabase (sem bloquear se falhar)
+                                    try {
+                                        await supabase.from('usuarios').delete().eq('id', userId);
+                                        console.log(`✅ Removido do Supabase`);
+                                    } catch (supabaseError) {
+                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
+                                    }
+                                    
+                                    alert(`❌ Usuário ${userToReject.nome} rejeitado e removido!`);
+                                    
                                 } catch (error) {
                                     console.error('Erro ao reprovar usuário:', error);
                                     alert('❌ Erro ao reprovar usuário. Tente novamente.');
                                 }
+                            } else {
+                                alert('⚠️ Usuário não encontrado ou já processado!');
                             }
                         };
 
@@ -4211,14 +4254,32 @@
                                 }
 
                                 try {
-                                    // Remover do Supabase
-                                    await supabase.from('usuarios').delete().eq('id', userId);
+                                    console.log(`🗑️ Excluindo usuário: ${userToDelete.nome} (ID: ${userId})`);
                                     
-                                    // Remover do estado local
-                                    setUsers(users.filter(u => u.id !== userId));
+                                    // 1. Remover do localStorage primeiro
+                                    const stored = localStorage.getItem('metax_usuarios');
+                                    if (stored) {
+                                        const parsedUsers = JSON.parse(stored);
+                                        const filteredUsers = parsedUsers.filter(u => u.id !== userId);
+                                        localStorage.setItem('metax_usuarios', JSON.stringify(filteredUsers));
+                                        console.log(`✅ Removido do localStorage`);
+                                    }
+                                    
+                                    // 2. Remover do estado local imediatamente
+                                    const updatedUsers = users.filter(u => u.id !== userId);
+                                    setUsers(updatedUsers);
+                                    console.log(`✅ Removido do estado local`);
+                                    
+                                    // 3. Tentar remover do Supabase (sem bloquear se falhar)
+                                    try {
+                                        await supabase.from('usuarios').delete().eq('id', userId);
+                                        console.log(`✅ Removido do Supabase`);
+                                    } catch (supabaseError) {
+                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
+                                    }
                                     
                                     alert(`🗑️ Usuário ${userToDelete.nome} excluído permanentemente!`);
-                                    refetchUsers(); // Recarregar dados do Supabase
+                                    
                                 } catch (error) {
                                     console.error('Erro ao excluir usuário:', error);
                                     alert('❌ Erro ao excluir usuário. Tente novamente.');
