@@ -613,12 +613,46 @@
                                 .order('created_at', { ascending: false });
                             
                             if (error) throw error;
-                            setData(result || []);
+                            
+                            console.log(`📊 Supabase ${table}:`, result);
+                            
+                            // Combinar dados do Supabase com localStorage
+                            const stored = localStorage.getItem(`metax_${table}`);
+                            const localData = stored ? JSON.parse(stored) : [];
+                            
+                            console.log(`💾 localStorage ${table}:`, localData);
+                            
+                            if (result && result.length > 0) {
+                                // Se Supabase tem dados, usá-los mas mesclar com localStorage
+                                const allData = [...result];
+                                
+                                // Adicionar itens do localStorage que não estão no Supabase
+                                localData.forEach(localItem => {
+                                    if (!allData.find(item => item.id === localItem.id)) {
+                                        console.log(`➕ Adicionando do localStorage: ${localItem.id || localItem.nome}`);
+                                        allData.push(localItem);
+                                    }
+                                });
+                                
+                                console.log(`🔄 Dados finais ${table}:`, allData);
+                                setData(allData);
+                                
+                                // Atualizar localStorage com dados combinados
+                                localStorage.setItem(`metax_${table}`, JSON.stringify(allData));
+                            } else {
+                                // Se Supabase está vazio, usar localStorage
+                                console.log(`📝 Usando localStorage para ${table}`);
+                                setData(localData);
+                            }
                         } catch (error) {
                             console.error(`Erro ao carregar ${table}:`, error);
                             // Fallback para localStorage em caso de erro
                             const stored = localStorage.getItem(`metax_${table}`);
-                            if (stored) setData(JSON.parse(stored));
+                            if (stored) {
+                                const localData = JSON.parse(stored);
+                                console.log(`💾 Fallback localStorage ${table}:`, localData);
+                                setData(localData);
+                            }
                         } finally {
                             setLoading(false);
                         }
@@ -801,7 +835,7 @@
                         );
                     };
 
-                    // Inicializar usuários padrão
+                    // Garantir usuários padrão no localStorage inicial
                     useEffect(() => {
                         const defaultUsers = [
                             {
@@ -822,31 +856,35 @@
                             }
                         ];
 
-                        // Se não há usuários carregados do Supabase, usar localStorage ou padrão
-                        if (users.length === 0 && !usersLoading) {
-                            const storedUsers = localStorage.getItem('metax_usuarios');
-                            if (storedUsers) {
-                                try {
-                                    const parsedUsers = JSON.parse(storedUsers);
-                                    // Garantir que usuários padrão existam
-                                    const allUsers = [...defaultUsers];
-                                    parsedUsers.forEach(user => {
-                                        if (!allUsers.find(u => u.id === user.id)) {
-                                            allUsers.push(user);
-                                        }
-                                    });
-                                    setUsers(allUsers);
-                                    localStorage.setItem('metax_usuarios', JSON.stringify(allUsers));
-                                } catch (error) {
-                                    console.error('Erro ao carregar usuários do localStorage:', error);
-                                    setUsers(defaultUsers);
+                        // Verificar se usuários padrão existem no localStorage
+                        const storedUsers = localStorage.getItem('metax_usuarios');
+                        if (!storedUsers) {
+                            console.log('🔧 Inicializando localStorage com usuários padrão');
+                            localStorage.setItem('metax_usuarios', JSON.stringify(defaultUsers));
+                        } else {
+                            try {
+                                const parsedUsers = JSON.parse(storedUsers);
+                                let needsUpdate = false;
+                                const updatedUsers = [...parsedUsers];
+                                
+                                // Verificar se usuários padrão existem
+                                defaultUsers.forEach(defaultUser => {
+                                    if (!updatedUsers.find(u => u.id === defaultUser.id)) {
+                                        console.log(`➕ Adicionando usuário padrão: ${defaultUser.nome}`);
+                                        updatedUsers.push(defaultUser);
+                                        needsUpdate = true;
+                                    }
+                                });
+                                
+                                if (needsUpdate) {
+                                    localStorage.setItem('metax_usuarios', JSON.stringify(updatedUsers));
                                 }
-                            } else {
-                                setUsers(defaultUsers);
+                            } catch (error) {
+                                console.error('Erro ao verificar localStorage:', error);
                                 localStorage.setItem('metax_usuarios', JSON.stringify(defaultUsers));
                             }
                         }
-                    }, [users.length, usersLoading]);
+                    }, []); // Executar apenas uma vez
 
                     // Componente de Login
                     const LoginPage = () => {
@@ -4266,7 +4304,87 @@
                                                 boxShadow: '0 4px 15px rgba(34, 139, 34, 0.3)',
                                                 transition: 'all 0.3s ease'
                                             }
-                                        }, '🔄 Recarregar Dados')
+                                        }, '🔄 Recarregar Dados'),
+                                        
+                                        // Botão debug localStorage
+                                        h('button', {
+                                            onClick: () => {
+                                                const localUsers = localStorage.getItem('metax_usuarios');
+                                                console.log('🔍 LocalStorage usuarios:', localUsers);
+                                                console.log('🔍 Estado users atual:', users);
+                                                console.log('🔍 pendingUsers:', pendingUsers);
+                                                alert(`LocalStorage: ${localUsers ? JSON.parse(localUsers).length : 0} usuários\nEstado: ${users.length} usuários\nPendentes: ${pendingUsers.length}`);
+                                            },
+                                            style: {
+                                                padding: '12px 20px',
+                                                background: 'linear-gradient(45deg, #ff6b6b, #ff8e8e)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                marginLeft: '10px'
+                                            }
+                                        }, '🔍 Debug'),
+                                        
+                                        // Botão sincronizar localStorage → Supabase
+                                        h('button', {
+                                            onClick: async () => {
+                                                try {
+                                                    const localUsers = localStorage.getItem('metax_usuarios');
+                                                    if (!localUsers) {
+                                                        alert('❌ Nenhum dado no localStorage');
+                                                        return;
+                                                    }
+                                                    
+                                                    const parsedUsers = JSON.parse(localUsers);
+                                                    console.log('🔄 Sincronizando usuários para Supabase:', parsedUsers);
+                                                    
+                                                    let syncCount = 0;
+                                                    for (const user of parsedUsers) {
+                                                        try {
+                                                            // Verificar se usuário já existe no Supabase
+                                                            const { data: existing } = await supabase
+                                                                .from('usuarios')
+                                                                .select('id')
+                                                                .eq('id', user.id)
+                                                                .single();
+                                                                
+                                                            if (!existing) {
+                                                                // Inserir usuário que não existe
+                                                                await supabase
+                                                                    .from('usuarios')
+                                                                    .insert([user]);
+                                                                syncCount++;
+                                                                console.log(`✅ Sincronizado: ${user.nome}`);
+                                                            }
+                                                        } catch (insertError) {
+                                                            console.log(`⚠️ Erro ao sincronizar ${user.nome}:`, insertError);
+                                                        }
+                                                    }
+                                                    
+                                                    alert(`✅ Sincronização concluída!\n${syncCount} usuários enviados para Supabase`);
+                                                    
+                                                    // Recarregar dados
+                                                    await refetchUsers();
+                                                } catch (error) {
+                                                    console.error('Erro na sincronização:', error);
+                                                    alert('❌ Erro na sincronização. Verifique o console.');
+                                                }
+                                            },
+                                            style: {
+                                                padding: '12px 20px',
+                                                background: 'linear-gradient(45deg, #9b59b6, #8e44ad)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                marginLeft: '10px'
+                                            }
+                                        }, '🔗 Sync Local→Supabase')
                                     ),
 
                                     // Tabs de navegação
@@ -4293,6 +4411,34 @@
                                     // Conteúdo das tabs
                                     activeTab === 'usuarios' && h('div', null,
                                         h('h3', { style: { color: '#ffd700', fontSize: '1.8rem', marginBottom: '30px', fontWeight: '800' } }, '👥 Gerenciar Usuários'),
+                                        
+                                        // Debug info
+                                        h('div', { 
+                                            style: { 
+                                                background: 'rgba(255, 0, 0, 0.1)', 
+                                                border: '1px solid #ff6b6b',
+                                                padding: '15px', 
+                                                borderRadius: '10px', 
+                                                marginBottom: '20px',
+                                                color: '#fff'
+                                            } 
+                                        },
+                                            h('h5', { style: { color: '#ff6b6b', margin: 0 } }, '🔍 DEBUG INFO:'),
+                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Total usuários carregados: ${users.length}`),
+                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Usuários pendentes: ${pendingUsers.length}`),
+                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Usuários aprovados: ${users.filter(u => u.status === 'aprovado').length}`),
+                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Loading: ${usersLoading ? 'SIM' : 'NÃO'}`),
+                                            pendingUsers.length > 0 && h('div', { style: { marginTop: '10px' } },
+                                                h('strong', { style: { color: '#ffd700' } }, 'Usuários pendentes:'),
+                                                h('ul', { style: { margin: '5px 0', paddingLeft: '20px' } },
+                                                    pendingUsers.map(user => 
+                                                        h('li', { key: user.id, style: { fontSize: '0.8rem', margin: '2px 0' } }, 
+                                                            `${user.nome} (ID: ${user.id}) - Status: ${user.status}`
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        ),
                                         
                                         // Usuários pendentes
                                         pendingUsers.length > 0 && h('div', { style: { marginBottom: '40px' } },
