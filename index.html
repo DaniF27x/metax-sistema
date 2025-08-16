@@ -622,27 +622,18 @@
                             
                             console.log(`💾 localStorage ${table}:`, localData);
                             
-                            if (result && result.length > 0) {
-                                // Se Supabase tem dados, usá-los mas mesclar com localStorage
-                                const allData = [...result];
-                                
-                                // Adicionar itens do localStorage que não estão no Supabase
-                                localData.forEach(localItem => {
-                                    if (!allData.find(item => item.id === localItem.id)) {
-                                        console.log(`➕ Adicionando do localStorage: ${localItem.id || localItem.nome}`);
-                                        allData.push(localItem);
-                                    }
-                                });
-                                
-                                console.log(`🔄 Dados finais ${table}:`, allData);
-                                setData(allData);
-                                
-                                // Atualizar localStorage com dados combinados
+                            // SEMPRE usar dados do Supabase como fonte primária
+                            const allData = result || [];
+                            console.log(`🔄 Dados do Supabase ${table}:`, allData);
+                            
+                            setData(allData);
+                            
+                            // Atualizar localStorage com dados do Supabase
+                            if (allData.length > 0) {
                                 localStorage.setItem(`metax_${table}`, JSON.stringify(allData));
+                                console.log(`💾 localStorage atualizado com dados do Supabase`);
                             } else {
-                                // Se Supabase está vazio, usar localStorage
-                                console.log(`📝 Usando localStorage para ${table}`);
-                                setData(localData);
+                                console.log(`⚠️ Nenhum dado encontrado no Supabase para ${table}`);
                             }
                         } catch (error) {
                             console.error(`Erro ao carregar ${table}:`, error);
@@ -661,9 +652,12 @@
                     useEffect(() => {
                         fetchData();
                         
-                        // Auto-refresh a cada 30 segundos para dados importantes
+                        // Auto-refresh mais frequente para dados importantes
                         if (table === 'usuarios' || table === 'checklists' || table === 'auditorias' || table === 'solicitacoes_financeiras') {
-                            const interval = setInterval(fetchData, 30000);
+                            const interval = setInterval(() => {
+                                console.log(`🔄 Auto-refresh ${table}...`);
+                                fetchData();
+                            }, 10000); // A cada 10 segundos
                             return () => clearInterval(interval);
                         }
                     }, dependencies);
@@ -673,24 +667,45 @@
                 
                 // Função para salvar no Supabase
                 const saveToSupabase = async (table, data, isUpdate = false) => {
+                    console.log(`💾 Salvando em ${table}:`, { data, isUpdate });
+                    
                     try {
                         let result;
                         if (isUpdate) {
+                            console.log(`🔄 UPDATE: Atualizando ${data.id} na tabela ${table}`);
                             result = await supabase
                                 .from(table)
                                 .update(data)
-                                .eq('id', data.id);
+                                .eq('id', data.id)
+                                .select(); // Retorna os dados atualizados
                         } else {
+                            console.log(`➕ INSERT: Inserindo novo registro na tabela ${table}`);
                             result = await supabase
                                 .from(table)
-                                .insert([data]);
+                                .insert([data])
+                                .select(); // Retorna os dados inseridos
                         }
                         
-                        if (result.error) throw result.error;
+                        console.log(`✅ Resultado Supabase:`, result);
+                        
+                        if (result.error) {
+                            console.error(`❌ Erro Supabase detalhado:`, {
+                                message: result.error.message,
+                                details: result.error.details,
+                                hint: result.error.hint,
+                                code: result.error.code
+                            });
+                            throw result.error;
+                        }
+                        
+                        console.log(`🎉 Sucesso ao salvar em ${table}!`);
                         return result;
+                        
                     } catch (error) {
-                        console.error(`Erro ao salvar em ${table}:`, error);
+                        console.error(`🚨 Erro crítico ao salvar em ${table}:`, error);
+                        
                         // Fallback para localStorage
+                        console.log(`💾 Usando fallback localStorage para ${table}`);
                         const stored = JSON.parse(localStorage.getItem(`metax_${table}`) || '[]');
                         if (isUpdate) {
                             const updated = stored.map(item => item.id === data.id ? data : item);
@@ -713,6 +728,17 @@
                     
                     // Dados do Supabase
                     const [users, setUsers, usersLoading, refetchUsers] = useSupabaseData('usuarios');
+                    
+                    // LOG DEBUG: Monitorar mudanças nos usuários
+                    useEffect(() => {
+                        console.log('🔍 USUARIOS ATUALIZADOS:', {
+                            total: users.length,
+                            pendentes: users.filter(u => u.status === 'pendente').length,
+                            aprovados: users.filter(u => u.status === 'aprovado').length,
+                            loading: usersLoading,
+                            usuarios: users
+                        });
+                    }, [users, usersLoading]);
                     const [checklists, setChecklists, checklistsLoading, refetchChecklists] = useSupabaseData('checklists');
                     const [auditorias, setAuditorias, auditoriasLoading, refetchAuditorias] = useSupabaseData('auditorias');
                     const [solicitacoesFinanceiras, setSolicitacoesFinanceiras, financeirasLoading, refetchFinanceiras] = useSupabaseData('solicitacoes_financeiras');
@@ -966,34 +992,39 @@
                                 return;
                             }
 
+                            // Validar e preparar dados do usuário
                             const newUser = {
-                                ...registerData,
+                                id: registerData.id.toString(), // Garantir que seja string
+                                nome: registerData.nome.trim(),
+                                senha: registerData.senha.toString(),
+                                cargo: registerData.cargo,
                                 status: 'pendente',
-                                createdAt: new Date().toISOString()
+                                aprovador: null,
+                                reprovador: null,
+                                data_aprovacao: null,
+                                data_reprovacao: null,
+                                created_at: new Date().toISOString() // Usar created_at para Supabase
                             };
+                            
+                            console.log('📋 Dados do novo usuário preparados:', newUser);
 
                             try {
-                                console.log('Tentando salvar usuário:', newUser);
+                                console.log('🚀 INICIANDO REGISTRO:', newUser);
                                 
-                                // Sempre salvar no localStorage primeiro para garantir
+                                // 1. PRIORIDADE: Salvar no Supabase PRIMEIRO
+                                console.log('💾 Tentando salvar no Supabase...');
+                                await saveToSupabase('usuarios', newUser);
+                                console.log('✅ SUCESSO no Supabase!');
+                                
+                                // 2. Backup no localStorage
                                 const stored = JSON.parse(localStorage.getItem('metax_usuarios') || '[]');
                                 stored.push(newUser);
                                 localStorage.setItem('metax_usuarios', JSON.stringify(stored));
-                                console.log('Usuário salvo no localStorage');
+                                console.log('💾 Backup no localStorage criado');
                                 
-                                // Atualizar a lista local de usuários imediatamente
+                                // 3. Atualizar interface local
                                 setUsers([...users, newUser]);
-                                
-                                // Forçar recarregamento do Supabase
-                                setTimeout(() => {
-                                    refetchUsers();
-                                }, 1000);
-                                console.log('Lista de usuários atualizada');
-                                
-                                // Tentar salvar no Supabase em background (sem bloquear)
-                                saveToSupabase('usuarios', newUser).catch(error => {
-                                    console.log('Erro Supabase (não crítico):', error);
-                                });
+                                console.log('🖥️ Interface atualizada');
                                 
                                 // Mensagem de sucesso
                                 alert(`✅ CADASTRO REALIZADO COM SUCESSO!
@@ -1015,8 +1046,25 @@
                                 console.log('Registro finalizado com sucesso');
                                 
                             } catch (error) {
-                                console.error('Erro crítico no registro:', error);
-                                alert(`❌ Erro ao registrar usuário: ${error.message || 'Erro desconhecido'}. Tente novamente.`);
+                                console.error('🚨 ERRO CRÍTICO no registro:', error);
+                                
+                                // Se for erro do Supabase, mostrar detalhes
+                                if (error.message) {
+                                    alert(`❌ FALHA NO CADASTRO!
+
+🔥 ERRO: ${error.message}
+
+💡 POSSÍVEIS CAUSAS:
+• Conexão com internet instável
+• Problema no servidor do banco
+• ID já existe no sistema
+• Campos obrigatórios inválidos
+
+⚠️ SEU CADASTRO NÃO FOI SALVO!
+Tente novamente ou contate o administrador.`);
+                                } else {
+                                    alert(`❌ Erro desconhecido no cadastro. Tente novamente.`);
+                                }
                             }
                         };
 
@@ -4445,7 +4493,124 @@
                                                 fontSize: '0.9rem',
                                                 marginLeft: '10px'
                                             }
-                                        }, '🔗 Sync Local→Supabase')
+                                        }, '🔗 Sync Local→Supabase'),
+                                        
+                                        // Botão testar conexão Supabase
+                                        h('button', {
+                                            onClick: async () => {
+                                                console.log('🧪 Testando conexão Supabase...');
+                                                try {
+                                                    // Teste 1: Verificar conexão básica
+                                                    const { data: healthCheck, error: healthError } = await supabase
+                                                        .from('usuarios')
+                                                        .select('count', { count: 'exact', head: true });
+                                                    
+                                                    console.log('📊 Health check:', { healthCheck, healthError });
+                                                    
+                                                    if (healthError) {
+                                                        alert(`❌ Erro de conexão Supabase:\n${healthError.message}\nCódigo: ${healthError.code}\nDetalhes: ${healthError.details}`);
+                                                        return;
+                                                    }
+                                                    
+                                                    // Teste 2: Listar todos os usuários direto do Supabase
+                                                    const { data: allUsers, error: usersError } = await supabase
+                                                        .from('usuarios')
+                                                        .select('*')
+                                                        .order('created_at', { ascending: false });
+                                                    
+                                                    console.log('👥 Usuários direto do Supabase:', allUsers);
+                                                    console.log('❌ Erro ao buscar usuários:', usersError);
+                                                    
+                                                    if (usersError) {
+                                                        alert(`❌ Erro ao buscar usuários:\n${usersError.message}`);
+                                                        return;
+                                                    }
+                                                    
+                                                    // Teste 3: Verificar estrutura da tabela
+                                                    const { data: tableInfo, error: tableError } = await supabase
+                                                        .rpc('get_table_info', { table_name: 'usuarios' })
+                                                        .single();
+                                                        
+                                                    console.log('🏗️ Estrutura da tabela:', { tableInfo, tableError });
+                                                    
+                                                    // Mostrar resultado
+                                                    alert(`✅ TESTE SUPABASE CONCLUÍDO!
+                                                    
+📊 Total usuários no Supabase: ${allUsers?.length || 0}
+👥 Usuários encontrados:
+${allUsers?.map(u => `• ${u.nome} (${u.status})`).join('\n') || 'Nenhum'}
+
+🔍 Verifique o console para detalhes completos!`);
+                                                    
+                                                } catch (error) {
+                                                    console.error('🚨 Erro crítico no teste:', error);
+                                                    alert(`❌ ERRO CRÍTICO:
+${error.message}
+
+Verifique:
+• Conexão com internet
+• Configuração do Supabase
+• Permissões da tabela usuarios`);
+                                                }
+                                            },
+                                            style: {
+                                                padding: '12px 20px',
+                                                background: 'linear-gradient(45deg, #e74c3c, #c0392b)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                marginLeft: '10px'
+                                            }
+                                        }, '🧪 Testar Supabase'),
+                                        
+                                        // Botão buscar pendentes específico
+                                        h('button', {
+                                            onClick: async () => {
+                                                console.log('🔍 Buscando usuários pendentes...');
+                                                try {
+                                                    const { data: pendentes, error } = await supabase
+                                                        .from('usuarios')
+                                                        .select('*')
+                                                        .eq('status', 'pendente')
+                                                        .order('created_at', { ascending: false });
+                                                        
+                                                    console.log('👥 Usuários pendentes encontrados:', pendentes);
+                                                    console.log('❌ Erro:', error);
+                                                    
+                                                    if (error) {
+                                                        alert(`❌ Erro: ${error.message}`);
+                                                        return;
+                                                    }
+                                                    
+                                                    alert(`🔍 USUÁRIOS PENDENTES:
+                                                    
+📊 Total encontrados: ${pendentes?.length || 0}
+
+${pendentes?.map(u => `• ${u.nome} (ID: ${u.id})
+  Status: ${u.status}
+  Data: ${u.created_at || u.createdAt || 'N/A'}`).join('\n\n') || 'Nenhum usuário pendente'}
+
+🔍 Veja o console para detalhes!`);
+                                                } catch (error) {
+                                                    console.error('Erro na busca:', error);
+                                                    alert(`❌ Erro na busca: ${error.message}`);
+                                                }
+                                            },
+                                            style: {
+                                                padding: '12px 20px',
+                                                background: 'linear-gradient(45deg, #f39c12, #e67e22)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                marginLeft: '10px'
+                                            }
+                                        }, '🔎 Buscar Pendentes')
                                     ),
 
                                     // Tabs de navegação
@@ -4521,7 +4686,7 @@
                                                         h('div', null,
                                                             h('h5', { style: { color: '#ffd700', fontSize: '1.2rem', margin: '0 0 5px 0' } }, user.nome),
                                                             h('p', { style: { color: '#fff', margin: '0 0 5px 0' } }, `ID: ${user.id} | Cargo: ${user.cargo}`),
-                                                            h('p', { style: { color: '#228B22', margin: 0, fontSize: '0.9rem' } }, `Registrado em: ${new Date(user.createdAt).toLocaleDateString('pt-BR')}`)
+                                                            h('p', { style: { color: '#228B22', margin: 0, fontSize: '0.9rem' } }, `Registrado em: ${new Date(user.created_at || user.createdAt).toLocaleDateString('pt-BR')}`)
                                                         ),
                                                         h('div', { style: { display: 'flex', gap: '15px' } },
                                                             h('button', {
