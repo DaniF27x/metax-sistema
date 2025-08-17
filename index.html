@@ -613,37 +613,12 @@
                                 .order('created_at', { ascending: false });
                             
                             if (error) throw error;
-                            
-                            console.log(`📊 Supabase ${table}:`, result);
-                            
-                            // Combinar dados do Supabase com localStorage
-                            const stored = localStorage.getItem(`metax_${table}`);
-                            const localData = stored ? JSON.parse(stored) : [];
-                            
-                            console.log(`💾 localStorage ${table}:`, localData);
-                            
-                            // SEMPRE usar dados do Supabase como fonte primária
-                            const allData = result || [];
-                            console.log(`🔄 Dados do Supabase ${table}:`, allData);
-                            
-                            setData(allData);
-                            
-                            // Atualizar localStorage com dados do Supabase
-                            if (allData.length > 0) {
-                                localStorage.setItem(`metax_${table}`, JSON.stringify(allData));
-                                console.log(`💾 localStorage atualizado com dados do Supabase`);
-                            } else {
-                                console.log(`⚠️ Nenhum dado encontrado no Supabase para ${table}`);
-                            }
+                            setData(result || []);
                         } catch (error) {
                             console.error(`Erro ao carregar ${table}:`, error);
                             // Fallback para localStorage em caso de erro
                             const stored = localStorage.getItem(`metax_${table}`);
-                            if (stored) {
-                                const localData = JSON.parse(stored);
-                                console.log(`💾 Fallback localStorage ${table}:`, localData);
-                                setData(localData);
-                            }
+                            if (stored) setData(JSON.parse(stored));
                         } finally {
                             setLoading(false);
                         }
@@ -651,15 +626,6 @@
                     
                     useEffect(() => {
                         fetchData();
-                        
-                        // Auto-refresh mais frequente para dados importantes
-                        if (table === 'usuarios' || table === 'checklists' || table === 'auditorias' || table === 'solicitacoes_financeiras') {
-                            const interval = setInterval(() => {
-                                console.log(`🔄 Auto-refresh ${table}...`);
-                                fetchData();
-                            }, 10000); // A cada 10 segundos
-                            return () => clearInterval(interval);
-                        }
                     }, dependencies);
                     
                     return [data, setData, loading, fetchData];
@@ -667,45 +633,24 @@
                 
                 // Função para salvar no Supabase
                 const saveToSupabase = async (table, data, isUpdate = false) => {
-                    console.log(`💾 Salvando em ${table}:`, { data, isUpdate });
-                    
                     try {
                         let result;
                         if (isUpdate) {
-                            console.log(`🔄 UPDATE: Atualizando ${data.id} na tabela ${table}`);
                             result = await supabase
                                 .from(table)
                                 .update(data)
-                                .eq('id', data.id)
-                                .select(); // Retorna os dados atualizados
+                                .eq('id', data.id);
                         } else {
-                            console.log(`➕ INSERT: Inserindo novo registro na tabela ${table}`);
                             result = await supabase
                                 .from(table)
-                                .insert([data])
-                                .select(); // Retorna os dados inseridos
+                                .insert([data]);
                         }
                         
-                        console.log(`✅ Resultado Supabase:`, result);
-                        
-                        if (result.error) {
-                            console.error(`❌ Erro Supabase detalhado:`, {
-                                message: result.error.message,
-                                details: result.error.details,
-                                hint: result.error.hint,
-                                code: result.error.code
-                            });
-                            throw result.error;
-                        }
-                        
-                        console.log(`🎉 Sucesso ao salvar em ${table}!`);
+                        if (result.error) throw result.error;
                         return result;
-                        
                     } catch (error) {
-                        console.error(`🚨 Erro crítico ao salvar em ${table}:`, error);
-                        
+                        console.error(`Erro ao salvar em ${table}:`, error);
                         // Fallback para localStorage
-                        console.log(`💾 Usando fallback localStorage para ${table}`);
                         const stored = JSON.parse(localStorage.getItem(`metax_${table}`) || '[]');
                         if (isUpdate) {
                             const updated = stored.map(item => item.id === data.id ? data : item);
@@ -728,17 +673,6 @@
                     
                     // Dados do Supabase
                     const [users, setUsers, usersLoading, refetchUsers] = useSupabaseData('usuarios');
-                    
-                    // LOG DEBUG: Monitorar mudanças nos usuários
-                    useEffect(() => {
-                        console.log('🔍 USUARIOS ATUALIZADOS:', {
-                            total: users.length,
-                            pendentes: users.filter(u => u.status === 'pendente').length,
-                            aprovados: users.filter(u => u.status === 'aprovado').length,
-                            loading: usersLoading,
-                            usuarios: users
-                        });
-                    }, [users, usersLoading]);
                     const [checklists, setChecklists, checklistsLoading, refetchChecklists] = useSupabaseData('checklists');
                     const [auditorias, setAuditorias, auditoriasLoading, refetchAuditorias] = useSupabaseData('auditorias');
                     const [solicitacoesFinanceiras, setSolicitacoesFinanceiras, financeirasLoading, refetchFinanceiras] = useSupabaseData('solicitacoes_financeiras');
@@ -861,7 +795,7 @@
                         );
                     };
 
-                    // Garantir usuários padrão no localStorage inicial
+                    // Inicializar usuários padrão
                     useEffect(() => {
                         const defaultUsers = [
                             {
@@ -882,35 +816,10 @@
                             }
                         ];
 
-                        // Verificar se usuários padrão existem no localStorage
-                        const storedUsers = localStorage.getItem('metax_usuarios');
-                        if (!storedUsers) {
-                            console.log('🔧 Inicializando localStorage com usuários padrão');
-                            localStorage.setItem('metax_usuarios', JSON.stringify(defaultUsers));
-                        } else {
-                            try {
-                                const parsedUsers = JSON.parse(storedUsers);
-                                let needsUpdate = false;
-                                const updatedUsers = [...parsedUsers];
-                                
-                                // Verificar se usuários padrão existem
-                                defaultUsers.forEach(defaultUser => {
-                                    if (!updatedUsers.find(u => u.id === defaultUser.id)) {
-                                        console.log(`➕ Adicionando usuário padrão: ${defaultUser.nome}`);
-                                        updatedUsers.push(defaultUser);
-                                        needsUpdate = true;
-                                    }
-                                });
-                                
-                                if (needsUpdate) {
-                                    localStorage.setItem('metax_usuarios', JSON.stringify(updatedUsers));
-                                }
-                            } catch (error) {
-                                console.error('Erro ao verificar localStorage:', error);
-                                localStorage.setItem('metax_usuarios', JSON.stringify(defaultUsers));
-                            }
+                        if (users.length === 0) {
+                            setUsers(defaultUsers);
                         }
-                    }, []); // Executar apenas uma vez
+                    }, []);
 
                     // Componente de Login
                     const LoginPage = () => {
@@ -919,40 +828,6 @@
                         const [registerData, setRegisterData] = useState({
                             nome: '', id: '', senha: '', cargo: 'Staff Geral'
                         });
-                        const [idStatus, setIdStatus] = useState(''); // Para mostrar status do ID
-
-                        // Função para gerar ID aleatório único
-                        const generateUniqueId = () => {
-                            let newId;
-                            let attempts = 0;
-                            do {
-                                newId = Math.floor(10000 + Math.random() * 90000).toString(); // Gera número de 5 dígitos
-                                attempts++;
-                            } while (users.find(u => u.id === newId) && attempts < 100);
-                            
-                            if (attempts >= 100) {
-                                // Se não conseguir gerar em 100 tentativas, usa timestamp
-                                newId = Date.now().toString().slice(-6);
-                            }
-                            
-                            setRegisterData({ ...registerData, id: newId });
-                            setIdStatus('✅ ID único gerado automaticamente!');
-                            setTimeout(() => setIdStatus(''), 3000);
-                        };
-
-                        // Função para verificar se ID já existe
-                        const checkIdExists = (id) => {
-                            if (!id) {
-                                setIdStatus('');
-                                return;
-                            }
-                            const exists = users.find(u => u.id === id);
-                            if (exists) {
-                                setIdStatus('❌ Este ID já está em uso! Escolha outro ou gere automaticamente.');
-                            } else {
-                                setIdStatus('✅ ID disponível!');
-                            }
-                        };
 
                         const handleLogin = async (e) => {
                             e.preventDefault();
@@ -975,96 +850,30 @@
                         const handleRegister = async (e) => {
                             e.preventDefault();
                             
-                            console.log('Iniciando registro com dados:', registerData);
-                            
                             if (!registerData.nome || !registerData.id || !registerData.senha) {
-                                alert('⚠️ Preencha todos os campos obrigatórios!');
+                                alert('⚠️ Preencha todos os campos!');
                                 return;
                             }
 
-                            // Verificação mais rigorosa de ID duplicado
                             const userExists = users.find(u => u.id === registerData.id);
-                            console.log('Verificando usuário existente:', { userExists, totalUsers: users.length });
-                            
                             if (userExists) {
-                                alert('❌ Este ID já está em uso! Use o botão "Gerar ID Automático" para obter um ID único.');
-                                setIdStatus('❌ ID já em uso!');
+                                alert('❌ ID já existe!');
                                 return;
                             }
 
-                            // Validar e preparar dados do usuário
                             const newUser = {
-                                id: registerData.id.toString(), // Garantir que seja string
-                                nome: registerData.nome.trim(),
-                                senha: registerData.senha.toString(),
-                                cargo: registerData.cargo,
-                                status: 'pendente',
-                                aprovador: null,
-                                reprovador: null,
-                                data_aprovacao: null,
-                                data_reprovacao: null,
-                                created_at: new Date().toISOString() // Usar created_at para Supabase
+                                ...registerData,
+                                status: 'pendente'
                             };
-                            
-                            console.log('📋 Dados do novo usuário preparados:', newUser);
 
                             try {
-                                console.log('🚀 INICIANDO REGISTRO:', newUser);
-                                
-                                // 1. PRIORIDADE: Salvar no Supabase PRIMEIRO
-                                console.log('💾 Tentando salvar no Supabase...');
                                 await saveToSupabase('usuarios', newUser);
-                                console.log('✅ SUCESSO no Supabase!');
-                                
-                                // 2. Backup no localStorage
-                                const stored = JSON.parse(localStorage.getItem('metax_usuarios') || '[]');
-                                stored.push(newUser);
-                                localStorage.setItem('metax_usuarios', JSON.stringify(stored));
-                                console.log('💾 Backup no localStorage criado');
-                                
-                                // 3. Atualizar interface local
-                                setUsers([...users, newUser]);
-                                console.log('🖥️ Interface atualizada');
-                                
-                                // Mensagem de sucesso
-                                alert(`✅ CADASTRO REALIZADO COM SUCESSO!
-
-📋 DADOS PARA LOGIN (APÓS APROVAÇÃO):
-• ID: ${registerData.id}
-• Senha: ${registerData.senha}
-
-⚠️ IMPORTANTE: 
-• Aguarde a aprovação do seu cadastro
-• Use exatamente estes dados para fazer login
-• Guarde estas informações em local seguro!
-
-🕐 Status: Aguardando aprovação da administração`);
-                                
+                                refetchUsers(); // Recarregar lista de usuários
+                                alert('✅ Cadastro enviado para aprovação!');
                                 setIsRegister(false);
                                 setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
-                                setIdStatus('');
-                                console.log('Registro finalizado com sucesso');
-                                
                             } catch (error) {
-                                console.error('🚨 ERRO CRÍTICO no registro:', error);
-                                
-                                // Se for erro do Supabase, mostrar detalhes
-                                if (error.message) {
-                                    alert(`❌ FALHA NO CADASTRO!
-
-🔥 ERRO: ${error.message}
-
-💡 POSSÍVEIS CAUSAS:
-• Conexão com internet instável
-• Problema no servidor do banco
-• ID já existe no sistema
-• Campos obrigatórios inválidos
-
-⚠️ SEU CADASTRO NÃO FOI SALVO!
-Tente novamente ou contate o administrador.`);
-                                } else {
-                                    alert(`❌ Erro desconhecido no cadastro. Tente novamente.`);
-                                }
+                                alert('❌ Erro ao registrar usuário. Tente novamente.');
                             }
                         };
 
@@ -1218,33 +1027,9 @@ Tente novamente ou contate o administrador.`);
                                         }, 'Entrar no Sistema'),
                                         h('button', {
                                             type: 'button',
-                                            onClick: () => {
-                                                setIsRegister(true);
-                                                setIdStatus('');
-                                            },
+                                            onClick: () => setIsRegister(true),
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Criar Nova Conta'),
-
-                                        // Informação sobre IDs
-                                        h('div', {
-                                            style: {
-                                                marginTop: '20px',
-                                                padding: '15px',
-                                                background: 'rgba(255, 215, 0, 0.1)',
-                                                border: '1px solid rgba(255, 215, 0, 0.3)',
-                                                borderRadius: '10px',
-                                                textAlign: 'center'
-                                            }
-                                        },
-                                            h('p', {
-                                                style: {
-                                                    color: '#ffd700',
-                                                    fontSize: '0.9rem',
-                                                    margin: 0,
-                                                    fontWeight: '600'
-                                                }
-                                            }, '💡 Dica: Use o botão "Gerar ID" no cadastro para evitar conflitos!')
-                                        )
 
                                     )
                                 ) : (
@@ -1262,65 +1047,15 @@ Tente novamente ou contate o administrador.`);
                                             })
                                         ),
                                         h('div', { style: { marginBottom: '20px' } },
-                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'ID Único para Login'),
-                                            h('div', { style: { display: 'flex', gap: '10px', alignItems: 'stretch' } },
-                                                h('input', {
-                                                    type: 'text',
-                                                    value: registerData.id,
-                                                    onChange: (e) => {
-                                                        setRegisterData({ ...registerData, id: e.target.value });
-                                                        checkIdExists(e.target.value);
-                                                    },
-                                                    onBlur: (e) => checkIdExists(e.target.value),
-                                                    placeholder: 'Digite ou gere automaticamente',
-                                                    style: { ...inputStyle, flex: 1 },
-                                                    required: true
-                                                }),
-                                                h('button', {
-                                                    type: 'button',
-                                                    onClick: generateUniqueId,
-                                                    style: {
-                                                        background: 'linear-gradient(45deg, #228B22, #32CD32)',
-                                                        color: '#000',
-                                                        padding: '12px 20px',
-                                                        border: '2px solid #228B22',
-                                                        borderRadius: '10px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '800',
-                                                        fontSize: '0.9rem',
-                                                        whiteSpace: 'nowrap',
-                                                        boxShadow: '0 0 15px rgba(34, 139, 34, 0.4)',
-                                                        transition: 'all 0.3s ease'
-                                                    }
-                                                }, '🎲 Gerar ID')
-                                            ),
-                                            // Status do ID
-                                            idStatus && h('div', {
-                                                style: {
-                                                    marginTop: '8px',
-                                                    padding: '8px 12px',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: '600',
-                                                    background: idStatus.includes('❌') 
-                                                        ? 'rgba(220, 20, 60, 0.2)' 
-                                                        : 'rgba(34, 139, 34, 0.2)',
-                                                    border: `2px solid ${idStatus.includes('❌') ? '#DC143C' : '#228B22'}`,
-                                                    color: idStatus.includes('❌') ? '#FF6B6B' : '#32CD32'
-                                                }
-                                            }, idStatus),
-                                            // Explicação sobre o ID
-                                            h('div', {
-                                                style: {
-                                                    marginTop: '8px',
-                                                    padding: '10px',
-                                                    background: 'rgba(255, 215, 0, 0.1)',
-                                                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.85rem',
-                                                    color: '#ffd700'
-                                                }
-                                            }, '💡 Este ID será usado para fazer login após a aprovação. Guarde-o bem!')
+                                            h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'ID Único'),
+                                            h('input', {
+                                                type: 'text',
+                                                value: registerData.id,
+                                                onChange: (e) => setRegisterData({ ...registerData, id: e.target.value }),
+                                                placeholder: 'Escolha um ID único',
+                                                style: inputStyle,
+                                                required: true
+                                            })
                                         ),
                                         h('div', { style: { marginBottom: '20px' } },
                                             h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, 'Senha'),
@@ -1346,55 +1081,13 @@ Tente novamente ou contate o administrador.`);
                                                 )
                                             )
                                         ),
-                                        // Orientações importantes
-                                        h('div', {
-                                            style: {
-                                                marginBottom: '25px',
-                                                padding: '20px',
-                                                background: 'rgba(34, 139, 34, 0.1)',
-                                                border: '2px solid rgba(34, 139, 34, 0.3)',
-                                                borderRadius: '15px'
-                                            }
-                                        },
-                                            h('h4', {
-                                                style: {
-                                                    color: '#32CD32',
-                                                    fontSize: '1.1rem',
-                                                    margin: '0 0 10px 0',
-                                                    fontWeight: '800',
-                                                    textAlign: 'center'
-                                                }
-                                            }, '📋 IMPORTANTE - DADOS PARA LOGIN'),
-                                            h('div', { style: { color: '#fff', fontSize: '0.95rem', lineHeight: '1.5' } },
-                                                h('p', { style: { margin: '5px 0' } }, `🆔 Seu ID: ${registerData.id || '[Gere ou digite um ID]'}`),
-                                                h('p', { style: { margin: '5px 0' } }, `🔑 Sua Senha: ${registerData.senha || '[Digite sua senha]'}`),
-                                                h('div', { style: { marginTop: '10px', padding: '8px', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 215, 0, 0.3)' } },
-                                                    h('strong', { style: { color: '#ffd700' } }, '⚠️ Anote estes dados! '),
-                                                    h('span', { style: { color: '#fff' } }, 'Você precisará deles para fazer login após a aprovação.')
-                                                )
-                                            )
-                                        ),
                                         h('button', {
                                             type: 'submit',
-                                            disabled: idStatus.includes('❌') || !registerData.id,
-                                            style: { 
-                                                ...buttonStyle, 
-                                                background: (idStatus.includes('❌') || !registerData.id) 
-                                                    ? 'rgba(128, 128, 128, 0.5)' 
-                                                    : 'linear-gradient(45deg, #228B22, #ffd700)', 
-                                                color: (idStatus.includes('❌') || !registerData.id) ? '#666' : '#000', 
-                                                fontWeight: '900',
-                                                cursor: (idStatus.includes('❌') || !registerData.id) ? 'not-allowed' : 'pointer',
-                                                opacity: (idStatus.includes('❌') || !registerData.id) ? 0.6 : 1
-                                            }
-                                        }, '✅ Registrar para Aprovação'),
+                                            style: { ...buttonStyle, background: 'linear-gradient(45deg, #228B22, #ffd700)', color: '#000', fontWeight: '900' }
+                                        }, 'Registrar'),
                                         h('button', {
                                             type: 'button',
-                                            onClick: () => {
-                                                setIsRegister(false);
-                                                setIdStatus('');
-                                                setRegisterData({ nome: '', id: '', senha: '', cargo: 'Staff Geral' });
-                                            },
+                                            onClick: () => setIsRegister(false),
                                             style: { ...buttonStyle, background: 'transparent', color: '#ffd700', border: '2px solid #ffd700' }
                                         }, 'Voltar ao Login')
                                     )
@@ -4213,43 +3906,20 @@ Tente novamente ou contate o administrador.`);
                             const userToApprove = users.find(u => u.id === userId && u.status === 'pendente');
                             if (userToApprove) {
                                 try {
-                                    console.log(`✅ Aprovando usuário: ${userToApprove.nome} (ID: ${userId})`);
+                                    // Atualizar no Supabase
+                                    await saveToSupabase('usuarios', { ...userToApprove, status: 'aprovado' }, true);
                                     
-                                    const approvedUser = { ...userToApprove, status: 'aprovado', aprovador: currentUser.nome, data_aprovacao: new Date().toISOString() };
-                                    
-                                    // 1. Atualizar localStorage primeiro
-                                    const stored = localStorage.getItem('metax_usuarios');
-                                    if (stored) {
-                                        const parsedUsers = JSON.parse(stored);
-                                        const updatedUsers = parsedUsers.map(u => 
-                                            u.id === userId ? approvedUser : u
-                                        );
-                                        localStorage.setItem('metax_usuarios', JSON.stringify(updatedUsers));
-                                        console.log(`✅ Atualizado no localStorage`);
-                                    }
-                                    
-                                    // 2. Atualizar estado local imediatamente
+                                    // Atualizar estado local
                                     setUsers(users.map(u => 
-                                        u.id === userId ? approvedUser : u
+                                        u.id === userId ? { ...u, status: 'aprovado' } : u
                                     ));
-                                    console.log(`✅ Atualizado no estado local`);
-                                    
-                                    // 3. Tentar atualizar no Supabase (sem bloquear se falhar)
-                                    try {
-                                        await saveToSupabase('usuarios', approvedUser, true);
-                                        console.log(`✅ Atualizado no Supabase`);
-                                    } catch (supabaseError) {
-                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
-                                    }
                                     
                                     alert(`✅ Usuário ${userToApprove.nome} aprovado com sucesso!`);
-                                    
+                                    refetchUsers(); // Recarregar dados do Supabase
                                 } catch (error) {
                                     console.error('Erro ao aprovar usuário:', error);
                                     alert('❌ Erro ao aprovar usuário. Tente novamente.');
                                 }
-                            } else {
-                                alert('⚠️ Usuário não encontrado ou já processado!');
                             }
                         };
 
@@ -4257,38 +3927,18 @@ Tente novamente ou contate o administrador.`);
                             const userToReject = users.find(u => u.id === userId && u.status === 'pendente');
                             if (userToReject) {
                                 try {
-                                    console.log(`🗑️ Rejeitando usuário: ${userToReject.nome} (ID: ${userId})`);
+                                    // Remover do Supabase
+                                    await supabase.from('usuarios').delete().eq('id', userId);
                                     
-                                    // 1. Remover do localStorage primeiro
-                                    const stored = localStorage.getItem('metax_usuarios');
-                                    if (stored) {
-                                        const parsedUsers = JSON.parse(stored);
-                                        const filteredUsers = parsedUsers.filter(u => u.id !== userId);
-                                        localStorage.setItem('metax_usuarios', JSON.stringify(filteredUsers));
-                                        console.log(`✅ Removido do localStorage`);
-                                    }
+                                    // Remover do estado local
+                                    setUsers(users.filter(u => u.id !== userId));
                                     
-                                    // 2. Remover do estado local imediatamente
-                                    const updatedUsers = users.filter(u => u.id !== userId);
-                                    setUsers(updatedUsers);
-                                    console.log(`✅ Removido do estado local`);
-                                    
-                                    // 3. Tentar remover do Supabase (sem bloquear se falhar)
-                                    try {
-                                        await supabase.from('usuarios').delete().eq('id', userId);
-                                        console.log(`✅ Removido do Supabase`);
-                                    } catch (supabaseError) {
-                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
-                                    }
-                                    
-                                    alert(`❌ Usuário ${userToReject.nome} rejeitado e removido!`);
-                                    
+                                    alert(`❌ Usuário ${userToReject.nome} rejeitado!`);
+                                    refetchUsers(); // Recarregar dados do Supabase
                                 } catch (error) {
                                     console.error('Erro ao reprovar usuário:', error);
                                     alert('❌ Erro ao reprovar usuário. Tente novamente.');
                                 }
-                            } else {
-                                alert('⚠️ Usuário não encontrado ou já processado!');
                             }
                         };
 
@@ -4302,32 +3952,14 @@ Tente novamente ou contate o administrador.`);
                                 }
 
                                 try {
-                                    console.log(`🗑️ Excluindo usuário: ${userToDelete.nome} (ID: ${userId})`);
+                                    // Remover do Supabase
+                                    await supabase.from('usuarios').delete().eq('id', userId);
                                     
-                                    // 1. Remover do localStorage primeiro
-                                    const stored = localStorage.getItem('metax_usuarios');
-                                    if (stored) {
-                                        const parsedUsers = JSON.parse(stored);
-                                        const filteredUsers = parsedUsers.filter(u => u.id !== userId);
-                                        localStorage.setItem('metax_usuarios', JSON.stringify(filteredUsers));
-                                        console.log(`✅ Removido do localStorage`);
-                                    }
-                                    
-                                    // 2. Remover do estado local imediatamente
-                                    const updatedUsers = users.filter(u => u.id !== userId);
-                                    setUsers(updatedUsers);
-                                    console.log(`✅ Removido do estado local`);
-                                    
-                                    // 3. Tentar remover do Supabase (sem bloquear se falhar)
-                                    try {
-                                        await supabase.from('usuarios').delete().eq('id', userId);
-                                        console.log(`✅ Removido do Supabase`);
-                                    } catch (supabaseError) {
-                                        console.log(`⚠️ Erro no Supabase (não crítico):`, supabaseError);
-                                    }
+                                    // Remover do estado local
+                                    setUsers(users.filter(u => u.id !== userId));
                                     
                                     alert(`🗑️ Usuário ${userToDelete.nome} excluído permanentemente!`);
-                                    
+                                    refetchUsers(); // Recarregar dados do Supabase
                                 } catch (error) {
                                     console.error('Erro ao excluir usuário:', error);
                                     alert('❌ Erro ao excluir usuário. Tente novamente.');
@@ -4362,256 +3994,18 @@ Tente novamente ou contate o administrador.`);
                             h('div', { style: { display: 'flex' } },
                                 h(Sidebar),
                                 h('main', { style: { flex: 1, padding: '40px' } },
-                                    // Cabeçalho com botão de recarregar
-                                    h('div', { 
+                                    h('h2', { 
                                         style: { 
-                                            display: 'flex', 
-                                            justifyContent: 'space-between', 
-                                            alignItems: 'center',
-                                            marginBottom: '40px'
+                                            fontSize: '2.8rem', 
+                                            fontWeight: '900', 
+                                            background: 'linear-gradient(45deg, #ffd700, #fff)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text',
+                                            marginBottom: '40px',
+                                            textShadow: '0 0 30px rgba(255, 215, 0, 0.5)'
                                         } 
-                                    },
-                                        h('h2', { 
-                                            style: { 
-                                                fontSize: '2.8rem', 
-                                                fontWeight: '900', 
-                                                background: 'linear-gradient(45deg, #ffd700, #fff)',
-                                                WebkitBackgroundClip: 'text',
-                                                WebkitTextFillColor: 'transparent',
-                                                backgroundClip: 'text',
-                                                margin: 0,
-                                                textShadow: '0 0 30px rgba(255, 215, 0, 0.5)'
-                                            } 
-                                        }, '⚙️ Administração do Sistema'),
-                                        
-                                        // Botão de recarregar dados
-                                        h('button', {
-                                            onClick: async () => {
-                                                alert('🔄 Recarregando dados do Supabase...');
-                                                try {
-                                                    await Promise.all([
-                                                        refetchUsers(),
-                                                        refetchChecklists(),
-                                                        refetchAuditorias(),
-                                                        refetchFinanceiras()
-                                                    ]);
-                                                    alert('✅ Dados recarregados com sucesso!');
-                                                } catch (error) {
-                                                    console.error('Erro ao recarregar:', error);
-                                                    alert('❌ Erro ao recarregar dados. Verifique o console.');
-                                                }
-                                            },
-                                            style: {
-                                                padding: '12px 20px',
-                                                background: 'linear-gradient(45deg, #228B22, #32CD32)',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '0.9rem',
-                                                boxShadow: '0 4px 15px rgba(34, 139, 34, 0.3)',
-                                                transition: 'all 0.3s ease'
-                                            }
-                                        }, '🔄 Recarregar Dados'),
-                                        
-                                        // Botão debug localStorage
-                                        h('button', {
-                                            onClick: () => {
-                                                const localUsers = localStorage.getItem('metax_usuarios');
-                                                console.log('🔍 LocalStorage usuarios:', localUsers);
-                                                console.log('🔍 Estado users atual:', users);
-                                                console.log('🔍 pendingUsers:', pendingUsers);
-                                                alert(`LocalStorage: ${localUsers ? JSON.parse(localUsers).length : 0} usuários\nEstado: ${users.length} usuários\nPendentes: ${pendingUsers.length}`);
-                                            },
-                                            style: {
-                                                padding: '12px 20px',
-                                                background: 'linear-gradient(45deg, #ff6b6b, #ff8e8e)',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '0.9rem',
-                                                marginLeft: '10px'
-                                            }
-                                        }, '🔍 Debug'),
-                                        
-                                        // Botão sincronizar localStorage → Supabase
-                                        h('button', {
-                                            onClick: async () => {
-                                                try {
-                                                    const localUsers = localStorage.getItem('metax_usuarios');
-                                                    if (!localUsers) {
-                                                        alert('❌ Nenhum dado no localStorage');
-                                                        return;
-                                                    }
-                                                    
-                                                    const parsedUsers = JSON.parse(localUsers);
-                                                    console.log('🔄 Sincronizando usuários para Supabase:', parsedUsers);
-                                                    
-                                                    let syncCount = 0;
-                                                    for (const user of parsedUsers) {
-                                                        try {
-                                                            // Verificar se usuário já existe no Supabase
-                                                            const { data: existing } = await supabase
-                                                                .from('usuarios')
-                                                                .select('id')
-                                                                .eq('id', user.id)
-                                                                .single();
-                                                                
-                                                            if (!existing) {
-                                                                // Inserir usuário que não existe
-                                                                await supabase
-                                                                    .from('usuarios')
-                                                                    .insert([user]);
-                                                                syncCount++;
-                                                                console.log(`✅ Sincronizado: ${user.nome}`);
-                                                            }
-                                                        } catch (insertError) {
-                                                            console.log(`⚠️ Erro ao sincronizar ${user.nome}:`, insertError);
-                                                        }
-                                                    }
-                                                    
-                                                    alert(`✅ Sincronização concluída!\n${syncCount} usuários enviados para Supabase`);
-                                                    
-                                                    // Recarregar dados
-                                                    await refetchUsers();
-                                                } catch (error) {
-                                                    console.error('Erro na sincronização:', error);
-                                                    alert('❌ Erro na sincronização. Verifique o console.');
-                                                }
-                                            },
-                                            style: {
-                                                padding: '12px 20px',
-                                                background: 'linear-gradient(45deg, #9b59b6, #8e44ad)',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '0.9rem',
-                                                marginLeft: '10px'
-                                            }
-                                        }, '🔗 Sync Local→Supabase'),
-                                        
-                                        // Botão testar conexão Supabase
-                                        h('button', {
-                                            onClick: async () => {
-                                                console.log('🧪 Testando conexão Supabase...');
-                                                try {
-                                                    // Teste 1: Verificar conexão básica
-                                                    const { data: healthCheck, error: healthError } = await supabase
-                                                        .from('usuarios')
-                                                        .select('count', { count: 'exact', head: true });
-                                                    
-                                                    console.log('📊 Health check:', { healthCheck, healthError });
-                                                    
-                                                    if (healthError) {
-                                                        alert(`❌ Erro de conexão Supabase:\n${healthError.message}\nCódigo: ${healthError.code}\nDetalhes: ${healthError.details}`);
-                                                        return;
-                                                    }
-                                                    
-                                                    // Teste 2: Listar todos os usuários direto do Supabase
-                                                    const { data: allUsers, error: usersError } = await supabase
-                                                        .from('usuarios')
-                                                        .select('*')
-                                                        .order('created_at', { ascending: false });
-                                                    
-                                                    console.log('👥 Usuários direto do Supabase:', allUsers);
-                                                    console.log('❌ Erro ao buscar usuários:', usersError);
-                                                    
-                                                    if (usersError) {
-                                                        alert(`❌ Erro ao buscar usuários:\n${usersError.message}`);
-                                                        return;
-                                                    }
-                                                    
-                                                    // Teste 3: Verificar estrutura da tabela
-                                                    const { data: tableInfo, error: tableError } = await supabase
-                                                        .rpc('get_table_info', { table_name: 'usuarios' })
-                                                        .single();
-                                                        
-                                                    console.log('🏗️ Estrutura da tabela:', { tableInfo, tableError });
-                                                    
-                                                    // Mostrar resultado
-                                                    alert(`✅ TESTE SUPABASE CONCLUÍDO!
-                                                    
-📊 Total usuários no Supabase: ${allUsers?.length || 0}
-👥 Usuários encontrados:
-${allUsers?.map(u => `• ${u.nome} (${u.status})`).join('\n') || 'Nenhum'}
-
-🔍 Verifique o console para detalhes completos!`);
-                                                    
-                                                } catch (error) {
-                                                    console.error('🚨 Erro crítico no teste:', error);
-                                                    alert(`❌ ERRO CRÍTICO:
-${error.message}
-
-Verifique:
-• Conexão com internet
-• Configuração do Supabase
-• Permissões da tabela usuarios`);
-                                                }
-                                            },
-                                            style: {
-                                                padding: '12px 20px',
-                                                background: 'linear-gradient(45deg, #e74c3c, #c0392b)',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '0.9rem',
-                                                marginLeft: '10px'
-                                            }
-                                        }, '🧪 Testar Supabase'),
-                                        
-                                        // Botão buscar pendentes específico
-                                        h('button', {
-                                            onClick: async () => {
-                                                console.log('🔍 Buscando usuários pendentes...');
-                                                try {
-                                                    const { data: pendentes, error } = await supabase
-                                                        .from('usuarios')
-                                                        .select('*')
-                                                        .eq('status', 'pendente')
-                                                        .order('created_at', { ascending: false });
-                                                        
-                                                    console.log('👥 Usuários pendentes encontrados:', pendentes);
-                                                    console.log('❌ Erro:', error);
-                                                    
-                                                    if (error) {
-                                                        alert(`❌ Erro: ${error.message}`);
-                                                        return;
-                                                    }
-                                                    
-                                                    alert(`🔍 USUÁRIOS PENDENTES:
-                                                    
-📊 Total encontrados: ${pendentes?.length || 0}
-
-${pendentes?.map(u => `• ${u.nome} (ID: ${u.id})
-  Status: ${u.status}
-  Data: ${u.created_at || u.createdAt || 'N/A'}`).join('\n\n') || 'Nenhum usuário pendente'}
-
-🔍 Veja o console para detalhes!`);
-                                                } catch (error) {
-                                                    console.error('Erro na busca:', error);
-                                                    alert(`❌ Erro na busca: ${error.message}`);
-                                                }
-                                            },
-                                            style: {
-                                                padding: '12px 20px',
-                                                background: 'linear-gradient(45deg, #f39c12, #e67e22)',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                cursor: 'pointer',
-                                                fontWeight: '700',
-                                                fontSize: '0.9rem',
-                                                marginLeft: '10px'
-                                            }
-                                        }, '🔎 Buscar Pendentes')
-                                    ),
+                                    }, '⚙️ Administração do Sistema'),
 
                                     // Tabs de navegação
                                     h('div', { style: { display: 'flex', gap: '20px', marginBottom: '40px' } },
@@ -4638,34 +4032,6 @@ ${pendentes?.map(u => `• ${u.nome} (ID: ${u.id})
                                     activeTab === 'usuarios' && h('div', null,
                                         h('h3', { style: { color: '#ffd700', fontSize: '1.8rem', marginBottom: '30px', fontWeight: '800' } }, '👥 Gerenciar Usuários'),
                                         
-                                        // Debug info
-                                        h('div', { 
-                                            style: { 
-                                                background: 'rgba(255, 0, 0, 0.1)', 
-                                                border: '1px solid #ff6b6b',
-                                                padding: '15px', 
-                                                borderRadius: '10px', 
-                                                marginBottom: '20px',
-                                                color: '#fff'
-                                            } 
-                                        },
-                                            h('h5', { style: { color: '#ff6b6b', margin: 0 } }, '🔍 DEBUG INFO:'),
-                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Total usuários carregados: ${users.length}`),
-                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Usuários pendentes: ${pendingUsers.length}`),
-                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Usuários aprovados: ${users.filter(u => u.status === 'aprovado').length}`),
-                                            h('p', { style: { margin: '5px 0', fontSize: '0.9rem' } }, `Loading: ${usersLoading ? 'SIM' : 'NÃO'}`),
-                                            pendingUsers.length > 0 && h('div', { style: { marginTop: '10px' } },
-                                                h('strong', { style: { color: '#ffd700' } }, 'Usuários pendentes:'),
-                                                h('ul', { style: { margin: '5px 0', paddingLeft: '20px' } },
-                                                    pendingUsers.map(user => 
-                                                        h('li', { key: user.id, style: { fontSize: '0.8rem', margin: '2px 0' } }, 
-                                                            `${user.nome} (ID: ${user.id}) - Status: ${user.status}`
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        ),
-                                        
                                         // Usuários pendentes
                                         pendingUsers.length > 0 && h('div', { style: { marginBottom: '40px' } },
                                             h('h4', { style: { color: '#ffd700', fontSize: '1.4rem', marginBottom: '20px' } }, '⏳ Usuários Pendentes de Aprovação'),
@@ -4686,7 +4052,7 @@ ${pendentes?.map(u => `• ${u.nome} (ID: ${u.id})
                                                         h('div', null,
                                                             h('h5', { style: { color: '#ffd700', fontSize: '1.2rem', margin: '0 0 5px 0' } }, user.nome),
                                                             h('p', { style: { color: '#fff', margin: '0 0 5px 0' } }, `ID: ${user.id} | Cargo: ${user.cargo}`),
-                                                            h('p', { style: { color: '#228B22', margin: 0, fontSize: '0.9rem' } }, `Registrado em: ${new Date(user.created_at || user.createdAt).toLocaleDateString('pt-BR')}`)
+                                                            h('p', { style: { color: '#228B22', margin: 0, fontSize: '0.9rem' } }, `Registrado em: ${new Date(user.createdAt).toLocaleDateString('pt-BR')}`)
                                                         ),
                                                         h('div', { style: { display: 'flex', gap: '15px' } },
                                                             h('button', {
