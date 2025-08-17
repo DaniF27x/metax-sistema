@@ -633,23 +633,31 @@
                 
                 // Função para salvar no Supabase
                 const saveToSupabase = async (table, data, isUpdate = false) => {
+                    console.log(`💾 Tentando salvar em ${table}:`, { data, isUpdate });
                     try {
                         let result;
                         if (isUpdate) {
+                            console.log('🔄 Fazendo UPDATE com ID:', data.id);
                             result = await supabase
                                 .from(table)
                                 .update(data)
                                 .eq('id', data.id);
                         } else {
+                            console.log('➕ Fazendo INSERT:', data);
                             result = await supabase
                                 .from(table)
                                 .insert([data]);
                         }
                         
-                        if (result.error) throw result.error;
+                        console.log('📊 Resultado Supabase:', result);
+                        if (result.error) {
+                            console.error('🚨 Erro específico do Supabase:', result.error);
+                            throw result.error;
+                        }
+                        console.log('✅ Sucesso no Supabase!');
                         return result;
                     } catch (error) {
-                        console.error(`Erro ao salvar em ${table}:`, error);
+                        console.error(`❌ Erro ao salvar em ${table}:`, error);
                         // Fallback para localStorage
                         const stored = JSON.parse(localStorage.getItem(`metax_${table}`) || '[]');
                         if (isUpdate) {
@@ -677,6 +685,7 @@
                     const [auditorias, setAuditorias, auditoriasLoading, refetchAuditorias] = useSupabaseData('auditorias');
                     const [solicitacoesFinanceiras, setSolicitacoesFinanceiras, financeirasLoading, refetchFinanceiras] = useSupabaseData('solicitacoes_financeiras');
                     const [topDoMes, setTopDoMes, topDoMesLoading, refetchTopDoMes] = useSupabaseData('top_do_mes');
+                    const [feedbacksPrefeitura, setFeedbacksPrefeitura, feedbacksLoading, refetchFeedbacks] = useSupabaseData('feedbacks_prefeitura');
                     
                     // Separar usuários aprovados e pendentes
                     const approvedUsers = users.filter(u => u.status === 'aprovado');
@@ -1202,6 +1211,7 @@
                                 { id: 'painel', label: '🏙️ Painel da Cidade', icon: '🏙️' },
                                 { id: 'financeiro', label: '💸 Painel Financeiro', icon: '💸' },
                                 { id: 'legislativo', label: '📘 Legislativo Digital', icon: '📘' },
+                                { id: 'feedback', label: '🏛️ Prefeitura/Política', icon: '🏛️' },
                                 ...(currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor' 
                                     ? [{ id: 'admin', label: '⚙️ Administração', icon: '⚙️' }] 
                                     : [])
@@ -3162,6 +3172,7 @@
                             texto: ''
                         });
                         const [erro, setErro] = React.useState('');
+                        const [enviando, setEnviando] = React.useState(false);
                         const [aba, setAba] = React.useState('abrir');
                         const podeAprovar = ['Diretor'].includes(currentUser?.cargo);
                         const [modalLeitura, setModalLeitura] = React.useState(null);
@@ -3887,6 +3898,877 @@
                         );
                     };
 
+                    // Página de Feedback da Prefeitura/Política
+                    const FeedbackPrefeituraPage = () => {
+                        try {
+                            console.log('🏛️ Iniciando FeedbackPrefeituraPage...');
+                            console.log('📊 Dados disponíveis:', {
+                                feedbacksPrefeitura: feedbacksPrefeitura?.length || 0,
+                                currentUser: currentUser?.nome,
+                                cargo: currentUser?.cargo
+                            });
+                            
+                            console.log('🔍 Verificando dependências...', {
+                                React: typeof React,
+                                useState: typeof React.useState,
+                                useEffect: typeof React.useEffect,
+                                feedbacksPrefeitura: Array.isArray(feedbacksPrefeitura),
+                                currentUser: !!currentUser
+                            });
+                        console.log('🪝 Inicializando useState activeTab...');
+                        const [activeTab, setActiveTab] = useState('criar');
+                        console.log('✅ activeTab inicializado');
+                        console.log('🪝 Inicializando formFeedback...');
+                        const [formFeedback, setFormFeedback] = React.useState({
+                            usuario_solicitante: '',
+                            nome_solicitante: '',
+                            id_feedbacker: '',
+                            categoria: '',
+                            subcategoria: '',
+                            nivel_complexidade: 'complexo',
+                            origem: '',
+                            descricao: '',
+                            anexo_url: '',
+                            resposta_aprovador: '',
+                            status: 'pendente'
+                        });
+                        
+                        // Preencher dados do usuário depois da inicialização
+                        React.useEffect(() => {
+                            if (currentUser?.id && !formFeedback.usuario_solicitante) {
+                                setFormFeedback(prev => ({
+                                    ...prev,
+                                    usuario_solicitante: currentUser.id,
+                                    nome_solicitante: currentUser.nome || ''
+                                }));
+                            }
+                        }, [currentUser]);
+                        const [erro, setErro] = React.useState('');
+                        const [enviando, setEnviando] = React.useState(false);
+                        
+                        // Verificar se pode aprovar feedbacks
+                        const podeAprovar = ['CEO', 'Diretor', 'Diretoria', 'Alta Cúpula', 'Resp. Comunidade'].includes(currentUser?.cargo);
+                        
+                        // Filtrar apenas feedbacks COMPLEXOS (que precisam de aprovação CEO/Alta Cúpula)
+                        const feedbacksComplexos = feedbacksPrefeitura.filter(f => 
+                            f.nivel_complexidade === 'complexo' && 
+                            (f.status === 'pendente' || f.status === 'em_analise')
+                        );
+                        
+                        // Debug logs
+                        console.log('📊 FEEDBACK DEBUG:', {
+                            totalFeedbacks: feedbacksPrefeitura.length,
+                            feedbacksComplexos: feedbacksComplexos.length,
+                            podeAprovar,
+                            cargoAtual: currentUser?.cargo,
+                            allFeedbacks: feedbacksPrefeitura,
+                            complexosPendentes: feedbacksComplexos
+                        });
+                        
+                        // Categorias de feedback com critério de complexidade
+                        const categorias = {
+                            'economia': {
+                                label: '💰 Economia',
+                                subcategorias: {
+                                    'sistema_financeiro': { label: 'Sistema Financeiro', complexo: true },
+                                    'banco_central': { label: 'Banco Central', complexo: true },
+                                    'ajuste_precos': { label: 'Ajuste de Preços', complexo: false },
+                                    'novos_jobs': { label: 'Novos Empregos', complexo: true }
+                                }
+                            },
+                            'infraestrutura': {
+                                label: '🏗️ Infraestrutura', 
+                                subcategorias: {
+                                    'mudanca_estrutural': { label: 'Mudança Estrutural Grande', complexo: true },
+                                    'renovacao_area': { label: 'Renovação de Área Completa', complexo: true },
+                                    'decoracao_simples': { label: 'Decoração Simples', complexo: false },
+                                    'bugs_visuais': { label: 'Bugs Visuais', complexo: false }
+                                }
+                            },
+                            'roleplay': {
+                                label: '🎭 Roleplay',
+                                subcategorias: {
+                                    'mudanca_governo': { label: 'Mudança de Governo', complexo: true },
+                                    'leis_federais': { label: 'Leis Federais', complexo: true },
+                                    'conflitos_menores': { label: 'Conflitos Menores', complexo: false },
+                                    'regras_basicas': { label: 'Regras Básicas', complexo: false }
+                                }
+                            },
+                            'eventos': {
+                                label: '🎪 Eventos/Cultura',
+                                subcategorias: {
+                                    'evento_server_wide': { label: 'Evento para Todo Servidor', complexo: true },
+                                    'shows_grandes': { label: 'Shows/Competições Grandes', complexo: true },
+                                    'evento_local': { label: 'Evento Local', complexo: false },
+                                    'calendario_mensal': { label: 'Calendário Mensal', complexo: false }
+                                }
+                            },
+                            'politica': {
+                                label: '🏛️ Política/Prefeitura',
+                                subcategorias: {
+                                    'mudanca_prefeito': { label: 'Mudança de Prefeito', complexo: true },
+                                    'politicas_servidor': { label: 'Políticas que Afetam Todo Servidor', complexo: true },
+                                    'leis_municipais': { label: 'Leis Municipais', complexo: false },
+                                    'cargos_ic': { label: 'Cargos In-Character', complexo: false }
+                                }
+                            }
+                        };
+
+                        async function criarFeedback(e) {
+                            e.preventDefault();
+                            console.log('🔄 Iniciando criação de feedback...');
+                            console.log('📝 Dados do formulário:', formFeedback);
+                            
+                            setEnviando(true);
+                            setErro('');
+                            
+                            if (!formFeedback.id_feedbacker || !formFeedback.categoria || !formFeedback.subcategoria || !formFeedback.descricao || !formFeedback.origem) {
+                                console.log('❌ Campos faltando:', {
+                                    id_feedbacker: !!formFeedback.id_feedbacker,
+                                    categoria: !!formFeedback.categoria,
+                                    subcategoria: !!formFeedback.subcategoria,
+                                    descricao: !!formFeedback.descricao,
+                                    origem: !!formFeedback.origem
+                                });
+                                setErro('⚠️ Preencha todos os campos obrigatórios (incluindo ID de quem deu o feedback)!');
+                                setEnviando(false);
+                                return;
+                            }
+                            
+                            // Verificar se precisa de anexo (Discord)
+                            if (formFeedback.origem === 'discord' && !formFeedback.anexo_url) {
+                                setErro('⚠️ Feedbacks do Discord precisam de anexo (link da imagem)!');
+                                setEnviando(false);
+                                return;
+                            }
+                            
+                            // Determinar automaticamente se é complexo
+                            const subcatInfo = categorias[formFeedback.categoria]?.subcategorias[formFeedback.subcategoria];
+                            const isComplexo = subcatInfo?.complexo || false;
+                            
+                            if (!isComplexo) {
+                                setErro('⚠️ Este tipo de feedback deve ser resolvido no Discord pelo staff! Não precisa vir para este sistema.');
+                                setEnviando(false);
+                                return;
+                            }
+                            
+                            const novoFeedback = {
+                                ...formFeedback,
+                                nivel_complexidade: 'complexo', // sempre complexo neste sistema
+                                status: 'pendente'
+                            };
+
+                            try {
+                                console.log('🚀 Enviando feedback para Supabase:', novoFeedback);
+                                
+                                const result = await saveToSupabase('feedbacks_prefeitura', novoFeedback);
+                                console.log('✅ Resultado do Supabase:', result);
+                                
+                                // Atualizar lista local imediatamente
+                                setFeedbacksPrefeitura([...feedbacksPrefeitura, novoFeedback]);
+                                
+                                // Recarregar do Supabase
+                                refetchFeedbacks();
+                                
+                                alert(`✅ FEEDBACK ENVIADO COM SUCESSO!
+                                
+👤 Feedbacker: ${formFeedback.id_feedbacker}
+📋 Tipo: ${categorias[formFeedback.categoria].label} > ${subcatInfo.label}
+🎯 Nível: COMPLEXO (requer aprovação máxima)
+⏳ Status: Pendente de análise
+
+Sua solicitação está na fila para análise da alta administração.`);
+                                
+                                setFormFeedback({
+                                    usuario_solicitante: currentUser?.id || '',
+                                    nome_solicitante: currentUser?.nome || '',
+                                    id_feedbacker: '',
+                                    categoria: '',
+                                    subcategoria: '',
+                                    nivel_complexidade: 'complexo',
+                                    origem: '',
+                                    descricao: '',
+                                    anexo_url: '',
+                                    resposta_aprovador: '',
+                                    status: 'pendente'
+                                });
+                                setErro('');
+                                setActiveTab('lista');
+                                
+                            } catch (error) {
+                                console.error('❌ Erro ao enviar feedback:', error);
+                                setErro(`❌ Erro ao enviar feedback: ${error.message}`);
+                            } finally {
+                                setEnviando(false);
+                            }
+                        }
+
+                        return h('div', { style: { padding: '24px', maxWidth: '1200px', margin: '0 auto' } },
+                            h('div', { style: { marginBottom: '32px', textAlign: 'center' } },
+                                h('h2', { 
+                                    style: { 
+                                        fontSize: '2.5rem', 
+                                        fontWeight: '900', 
+                                        background: 'linear-gradient(45deg, #ffd700, #fff)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                        textShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
+                                        marginBottom: '16px'
+                                    } 
+                                }, '🏛️ Prefeitura / Política - Feedback'),
+                                h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' } },
+                                    h('p', { 
+                                        style: { 
+                                            color: '#ffd700', 
+                                            fontSize: '1.2rem', 
+                                            fontWeight: '600',
+                                            background: 'rgba(255, 215, 0, 0.1)',
+                                            padding: '12px 24px',
+                                            borderRadius: '10px',
+                                            border: '2px solid #ffd700',
+                                            display: 'inline-block',
+                                            margin: 0
+                                        } 
+                                    }, '⚠️ SOMENTE FEEDBACKS COMPLEXOS - Feedbacks simples são resolvidos no Discord'),
+
+                                    // Debug info
+                                    h('div', { 
+                                        style: { 
+                                            background: 'rgba(255, 0, 0, 0.1)', 
+                                            border: '1px solid #ff6b6b',
+                                            padding: '12px 20px', 
+                                            borderRadius: '8px', 
+                                            color: '#ff6b6b',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600'
+                                        } 
+                                    }, `🔍 DEBUG: ${feedbacksPrefeitura.length} feedbacks carregados | ${feedbacksComplexos.length} complexos pendentes | Pode aprovar: ${podeAprovar ? 'SIM' : 'NÃO'}`)
+                                ),
+                            ),
+
+                            // Navegação das abas
+                            h('div', { style: { display: 'flex', marginBottom: '32px', gap: '8px', justifyContent: 'center' } },
+                                [
+                                    { id: 'criar', label: '📝 Novo Feedback', icon: '📝' },
+                                    { id: 'lista', label: '📋 Meus Feedbacks', icon: '📋' },
+                                    ...(podeAprovar ? [{ id: 'pendentes', label: '⏳ Pendentes de Aprovação', icon: '⏳' }] : [])
+                                ].map(tab =>
+                                    h('button', {
+                                        key: tab.id,
+                                        onClick: () => setActiveTab(tab.id),
+                                        style: {
+                                            padding: '16px 24px',
+                                            background: activeTab === tab.id ? 'linear-gradient(45deg, #ffd700, #228B22)' : 'rgba(255, 215, 0, 0.1)',
+                                            color: activeTab === tab.id ? '#000' : '#ffd700',
+                                            border: '2px solid #ffd700',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            fontWeight: '700',
+                                            fontSize: '1rem',
+                                            transition: 'all 0.3s ease',
+                                            textTransform: 'uppercase'
+                                        }
+                                    }, tab.label)
+                                )
+                            ),
+
+                            // Conteúdo das abas
+                            (() => {
+                                switch(activeTab) {
+                                    case 'criar':
+                                        return h('div', { style: { background: 'rgba(0,0,0,0.8)', padding: '32px', borderRadius: '15px', border: '2px solid #ffd700' } },
+                                            h('form', { onSubmit: criarFeedback },
+                                                erro && h('div', { 
+                                                    style: { 
+                                                        background: 'rgba(220, 20, 60, 0.2)', 
+                                                        color: '#ff6b6b', 
+                                                        padding: '16px', 
+                                                        borderRadius: '10px', 
+                                                        marginBottom: '24px',
+                                                        border: '2px solid #ff6b6b'
+                                                    } 
+                                                }, erro),
+
+                                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' } },
+                                                    h('div', {},
+                                                        h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '🆔 ID de quem deu o Feedback'),
+                                                        h('input', {
+                                                            type: 'text',
+                                                            value: formFeedback.id_feedbacker,
+                                                            onChange: (e) => setFormFeedback({...formFeedback, id_feedbacker: e.target.value}),
+                                                            placeholder: 'ID do jogador que deu o feedback',
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            },
+                                                            required: true
+                                                        })
+                                                    ),
+
+                                                    h('div', {},
+                                                        h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '🎯 Origem do Feedback'),
+                                                        h('select', {
+                                                            value: formFeedback.origem,
+                                                            onChange: (e) => setFormFeedback({...formFeedback, origem: e.target.value}),
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            },
+                                                            required: true
+                                                        },
+                                                            h('option', { value: '' }, 'Selecione a origem...'),
+                                                            h('option', { value: 'discord' }, '💬 Discord (precisa anexo)'),
+                                                            h('option', { value: 'ingame' }, '🎮 In-Game (não precisa anexo)')
+                                                        )
+                                                    ),
+
+                                                ),
+
+                                                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' } },
+                                                    h('div', {},
+                                                        h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '📂 Categoria Principal'),
+                                                        h('select', {
+                                                            value: formFeedback.categoria,
+                                                            onChange: (e) => {
+                                                                setFormFeedback({...formFeedback, categoria: e.target.value, subcategoria: ''});
+                                                            },
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            },
+                                                            required: true
+                                                        },
+                                                            h('option', { value: '' }, 'Selecione a categoria...'),
+                                                            Object.keys(categorias).map(key =>
+                                                                h('option', { key, value: key }, categorias[key].label)
+                                                            )
+                                                        )
+                                                    ),
+
+                                                    formFeedback.categoria && h('div', {},
+                                                        h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '🎯 Subcategoria'),
+                                                        h('select', {
+                                                            value: formFeedback.subcategoria,
+                                                            onChange: (e) => setFormFeedback({...formFeedback, subcategoria: e.target.value}),
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            },
+                                                            required: true
+                                                        },
+                                                            h('option', { value: '' }, 'Selecione a subcategoria...'),
+                                                            Object.keys(categorias[formFeedback.categoria]?.subcategorias || {}).map(key => {
+                                                                const subcat = categorias[formFeedback.categoria].subcategorias[key];
+                                                                return h('option', { 
+                                                                    key, 
+                                                                    value: key,
+                                                                    style: { color: subcat.complexo ? '#ffd700' : '#999' }
+                                                                }, `${subcat.label} ${subcat.complexo ? '(COMPLEXO ✅)' : '(SIMPLES - Discord ❌)'}`);
+                                                            })
+                                                        )
+                                                    )
+                                                ),
+
+                                                h('div', { style: { marginBottom: '24px' } },
+                                                    h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '📝 Descrição do Feedback'),
+                                                    h('textarea', {
+                                                        value: formFeedback.descricao,
+                                                        onChange: (e) => setFormFeedback({...formFeedback, descricao: e.target.value}),
+                                                        placeholder: 'Descreva detalhadamente seu feedback...',
+                                                        rows: 6,
+                                                        style: {
+                                                            width: '100%',
+                                                            padding: '16px',
+                                                            background: 'rgba(0,0,0,0.7)',
+                                                            color: '#fff',
+                                                            border: '2px solid #ffd700',
+                                                            borderRadius: '10px',
+                                                            fontSize: '16px',
+                                                            resize: 'vertical'
+                                                        },
+                                                        required: true
+                                                    })
+                                                ),
+
+                                                formFeedback.origem === 'discord' && h('div', { style: { marginBottom: '24px' } },
+                                                    h('label', { style: { display: 'block', color: '#ffd700', marginBottom: '8px', fontWeight: '700' } }, '📎 Anexo (Print do Discord)'),
+                                                    h('div', { style: { display: 'grid', gap: '12px' } },
+                                                        h('input', {
+                                                            type: 'file',
+                                                            accept: 'image/*',
+                                                            onChange: (e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onload = (event) => {
+                                                                        setFormFeedback({
+                                                                            ...formFeedback, 
+                                                                            anexo_url: event.target.result
+                                                                        });
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            },
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #ffd700',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            },
+                                                            required: formFeedback.origem === 'discord'
+                                                        }),
+                                                        h('input', {
+                                                            type: 'url',
+                                                            value: formFeedback.anexo_url,
+                                                            onChange: (e) => setFormFeedback({...formFeedback, anexo_url: e.target.value}),
+                                                            placeholder: 'OU cole o link da imagem: https://...',
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: 'rgba(0,0,0,0.7)',
+                                                                color: '#fff',
+                                                                border: '2px solid #32CD32',
+                                                                borderRadius: '10px',
+                                                                fontSize: '16px'
+                                                            }
+                                                        }),
+                                                        formFeedback.anexo_url && h('div', {
+                                                            style: {
+                                                                background: 'rgba(255, 215, 0, 0.1)',
+                                                                padding: '12px',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid #ffd700',
+                                                                textAlign: 'center'
+                                                            }
+                                                        },
+                                                            h('p', { style: { color: '#ffd700', margin: '0 0 8px 0', fontSize: '0.9rem' } }, '📷 Preview da Imagem:'),
+                                                            h('img', {
+                                                                src: formFeedback.anexo_url,
+                                                                alt: 'Preview',
+                                                                style: {
+                                                                    maxWidth: '100%',
+                                                                    maxHeight: '200px',
+                                                                    borderRadius: '8px',
+                                                                    border: '2px solid #ffd700'
+                                                                },
+                                                                onError: (e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.nextSibling.style.display = 'block';
+                                                                }
+                                                            }),
+                                                            h('p', { 
+                                                                style: { 
+                                                                    color: '#ff6b6b', 
+                                                                    margin: '8px 0 0 0', 
+                                                                    fontSize: '0.8rem',
+                                                                    display: 'none'
+                                                                } 
+                                                            }, '❌ Erro ao carregar imagem - verifique o link')
+                                                        )
+                                                    )
+                                                ),
+
+                                                // Alerta sobre complexidade
+                                                formFeedback.subcategoria && h('div', { 
+                                                    style: { 
+                                                        background: categorias[formFeedback.categoria]?.subcategorias[formFeedback.subcategoria]?.complexo ? 'rgba(34, 139, 34, 0.2)' : 'rgba(220, 20, 60, 0.2)',
+                                                        color: categorias[formFeedback.categoria]?.subcategorias[formFeedback.subcategoria]?.complexo ? '#32CD32' : '#ff6b6b',
+                                                        padding: '16px', 
+                                                        borderRadius: '10px', 
+                                                        marginBottom: '24px',
+                                                        border: `2px solid ${categorias[formFeedback.categoria]?.subcategorias[formFeedback.subcategoria]?.complexo ? '#32CD32' : '#ff6b6b'}`,
+                                                        textAlign: 'center',
+                                                        fontWeight: '700'
+                                                    } 
+                                                },
+                                                    categorias[formFeedback.categoria]?.subcategorias[formFeedback.subcategoria]?.complexo 
+                                                        ? '✅ FEEDBACK COMPLEXO - Será enviado para aprovação da alta administração'
+                                                        : '❌ FEEDBACK SIMPLES - Este tipo deve ser resolvido no Discord pelo staff'
+                                                ),
+
+                                                h('div', { style: { display: 'flex', gap: '16px' } },
+                                                    h('button', {
+                                                        type: 'submit',
+                                                        disabled: enviando,
+                                                        style: {
+                                                            flex: 1,
+                                                            padding: '20px',
+                                                            background: enviando ? 'linear-gradient(45deg, #888, #555)' : 'linear-gradient(45deg, #ffd700, #228B22)',
+                                                            color: enviando ? '#ccc' : '#000',
+                                                            border: '2px solid #ffd700',
+                                                            borderRadius: '12px',
+                                                            fontSize: '1.2rem',
+                                                            fontWeight: '900',
+                                                            cursor: enviando ? 'not-allowed' : 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '1px',
+                                                            opacity: enviando ? 0.7 : 1
+                                                        }
+                                                    }, enviando ? '⏳ Enviando...' : '🚀 Enviar Feedback Complexo'),
+
+                                                    h('button', {
+                                                        type: 'button',
+                                                        onClick: async () => {
+                                                            try {
+                                                                console.log('🧪 Testando conexão Supabase feedbacks...');
+                                                                const testFeedback = {
+                                                                    id: 'teste_' + Date.now(),
+                                                                    usuario_solicitante: currentUser?.id || 'teste',
+                                                                    nome_solicitante: currentUser?.nome || 'Teste',
+                                                                    id_feedbacker: 'player123',
+                                                                    categoria: 'economia',
+                                                                    subcategoria: 'sistema_financeiro',
+                                                                    nivel_complexidade: 'complexo',
+                                                                    origem: 'discord',
+                                                                    descricao: 'Teste de conexão com Supabase',
+                                                                    anexo_url: 'https://via.placeholder.com/300x200',
+                                                                    status: 'pendente'
+                                                                };
+                                                                
+                                                                console.log('📤 Enviando feedback teste:', testFeedback);
+                                                                const result = await saveToSupabase('feedbacks_prefeitura', testFeedback);
+                                                                console.log('✅ Resultado:', result);
+                                                                
+                                                                alert('✅ TESTE SUPABASE OK!\n\nFeedback teste criado com sucesso. Verifique a aba "Pendentes" se você tem permissão.');
+                                                                refetchFeedbacks();
+                                                            } catch (error) {
+                                                                console.error('❌ Erro no teste:', error);
+                                                                alert(`❌ ERRO NO TESTE:\n\n${error.message}`);
+                                                            }
+                                                        },
+                                                        style: {
+                                                            padding: '20px',
+                                                            background: 'linear-gradient(45deg, #e74c3c, #c0392b)',
+                                                            color: '#fff',
+                                                            border: '2px solid #e74c3c',
+                                                            borderRadius: '12px',
+                                                            fontSize: '1rem',
+                                                            fontWeight: '700',
+                                                            cursor: 'pointer',
+                                                            minWidth: '150px'
+                                                        }
+                                                    }, '🧪 Testar DB')
+                                                )
+                                            )
+                                        );
+
+                                    case 'lista':
+                                        const meusFeedbacks = feedbacksPrefeitura.filter(f => f.usuario_solicitante === currentUser?.id);
+                                        return h('div', { style: { background: 'rgba(0,0,0,0.8)', padding: '32px', borderRadius: '15px', border: '2px solid #ffd700' } },
+                                            h('h3', { style: { color: '#ffd700', marginBottom: '24px', fontSize: '1.8rem', fontWeight: '700' } }, '📋 Meus Feedbacks'),
+                                            
+                                            meusFeedbacks.length === 0 ? h('div', { 
+                                                style: { 
+                                                    textAlign: 'center', 
+                                                    padding: '40px',
+                                                    color: '#ffd700',
+                                                    fontSize: '1.2rem',
+                                                    fontWeight: '600'
+                                                } 
+                                            }, '📝 Você ainda não enviou nenhum feedback complexo.') :
+                                            
+                                            h('div', { style: { display: 'grid', gap: '20px' } },
+                                                meusFeedbacks.map(feedback =>
+                                                    h('div', {
+                                                        key: feedback.id,
+                                                        style: {
+                                                            background: 'rgba(255, 215, 0, 0.1)',
+                                                            border: '2px solid #ffd700',
+                                                            borderRadius: '12px',
+                                                            padding: '20px'
+                                                        }
+                                                    },
+                                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' } },
+                                                            h('div', {},
+                                                                h('h4', { style: { color: '#ffd700', margin: 0, fontSize: '1.2rem' } }, 
+                                                                    `${categorias[feedback.categoria]?.label || feedback.categoria} > ${categorias[feedback.categoria]?.subcategorias[feedback.subcategoria]?.label || feedback.subcategoria}`),
+                                                                h('p', { style: { color: '#228B22', margin: '4px 0', fontSize: '0.9rem' } }, 
+                                                                    `📅 ${new Date(feedback.created_at).toLocaleDateString('pt-BR')} • 🎯 ${feedback.origem}`)
+                                                            ),
+                                                            h('span', { 
+                                                                style: { 
+                                                                    padding: '8px 16px',
+                                                                    borderRadius: '20px',
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: '700',
+                                                                    background: feedback.status === 'pendente' ? 'rgba(255, 165, 0, 0.2)' : 
+                                                                               feedback.status === 'aprovado' ? 'rgba(34, 139, 34, 0.2)' :
+                                                                               feedback.status === 'negado' ? 'rgba(220, 20, 60, 0.2)' : 'rgba(128, 128, 128, 0.2)',
+                                                                    color: feedback.status === 'pendente' ? '#FFA500' : 
+                                                                           feedback.status === 'aprovado' ? '#32CD32' :
+                                                                           feedback.status === 'negado' ? '#ff6b6b' : '#999'
+                                                                } 
+                                                            }, 
+                                                                feedback.status === 'pendente' ? '⏳ Pendente' :
+                                                                feedback.status === 'aprovado' ? '✅ Aprovado' :
+                                                                feedback.status === 'negado' ? '❌ Negado' : '❓ Desconhecido'
+                                                            )
+                                                        ),
+                                                        h('p', { style: { color: '#fff', margin: '12px 0', lineHeight: '1.5' } }, feedback.descricao),
+                                                        
+                                                        feedback.anexo_url && h('div', { style: { marginTop: '12px' } },
+                                                            h('a', { 
+                                                                href: feedback.anexo_url, 
+                                                                target: '_blank',
+                                                                style: { color: '#32CD32', textDecoration: 'underline' } 
+                                                            }, '📎 Ver Anexo')
+                                                        ),
+
+                                                        (feedback.status === 'aprovado' || feedback.status === 'negado') && feedback.resposta_aprovador && 
+                                                        h('div', { 
+                                                            style: { 
+                                                                marginTop: '16px',
+                                                                padding: '16px',
+                                                                background: feedback.status === 'aprovado' ? 'rgba(34, 139, 34, 0.1)' : 'rgba(220, 20, 60, 0.1)',
+                                                                borderRadius: '8px',
+                                                                borderLeft: `4px solid ${feedback.status === 'aprovado' ? '#32CD32' : '#ff6b6b'}`
+                                                            }
+                                                        },
+                                                            h('h5', { 
+                                                                style: { 
+                                                                    color: feedback.status === 'aprovado' ? '#32CD32' : '#ff6b6b', 
+                                                                    margin: '0 0 8px 0',
+                                                                    fontSize: '1rem',
+                                                                    fontWeight: '700'
+                                                                } 
+                                                            }, `${feedback.status === 'aprovado' ? '✅' : '❌'} Resposta da Administração:`),
+                                                            h('p', { style: { color: '#fff', margin: 0, lineHeight: '1.4' } }, feedback.resposta_aprovador),
+                                                            feedback.aprovador_nome && h('p', { 
+                                                                style: { 
+                                                                    color: '#ffd700', 
+                                                                    margin: '8px 0 0 0', 
+                                                                    fontSize: '0.9rem',
+                                                                    fontStyle: 'italic'
+                                                                } 
+                                                            }, `👤 ${feedback.aprovador_nome} (${feedback.aprovador_cargo})`)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        );
+
+                                    case 'pendentes':
+                                        if (!podeAprovar) return null;
+                                        
+                                        return h('div', { style: { background: 'rgba(0,0,0,0.8)', padding: '32px', borderRadius: '15px', border: '2px solid #ffd700' } },
+                                            h('h3', { style: { color: '#ffd700', marginBottom: '24px', fontSize: '1.8rem', fontWeight: '700' } }, '⏳ Feedbacks Complexos Pendentes'),
+                                            
+                                            feedbacksComplexos.length === 0 ? h('div', { 
+                                                style: { 
+                                                    textAlign: 'center', 
+                                                    padding: '40px',
+                                                    color: '#32CD32',
+                                                    fontSize: '1.2rem',
+                                                    fontWeight: '600'
+                                                } 
+                                            }, '✅ Não há feedbacks complexos pendentes de aprovação.') :
+                                            
+                                            h('div', { style: { display: 'grid', gap: '24px' } },
+                                                feedbacksComplexos.map(feedback =>
+                                                    h('div', {
+                                                        key: feedback.id,
+                                                        style: {
+                                                            background: 'rgba(255, 165, 0, 0.1)',
+                                                            border: '2px solid #FFA500',
+                                                            borderRadius: '12px',
+                                                            padding: '24px'
+                                                        }
+                                                    },
+                                                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' } },
+                                                            h('div', {},
+                                                                h('h4', { style: { color: '#FFA500', margin: 0, fontSize: '1.3rem', fontWeight: '700' } }, 
+                                                                    `${categorias[feedback.categoria]?.label || feedback.categoria} > ${categorias[feedback.categoria]?.subcategorias[feedback.subcategoria]?.label || feedback.subcategoria}`),
+                                                                h('p', { style: { color: '#ffd700', margin: '4px 0', fontSize: '1rem' } }, 
+                                                                    `👤 ${feedback.nome_solicitante} (ID: ${feedback.usuario_solicitante})`),
+                                                                h('p', { style: { color: '#228B22', margin: '4px 0', fontSize: '0.9rem' } }, 
+                                                                    `📅 ${new Date(feedback.created_at).toLocaleDateString('pt-BR')} • 🎯 ${feedback.origem.toUpperCase()}`)
+                                                            ),
+                                                            h('span', { 
+                                                                style: { 
+                                                                    padding: '8px 16px',
+                                                                    borderRadius: '20px',
+                                                                    fontSize: '0.9rem',
+                                                                    fontWeight: '700',
+                                                                    background: 'rgba(255, 215, 0, 0.2)',
+                                                                    color: '#ffd700',
+                                                                    border: '2px solid #ffd700'
+                                                                } 
+                                                            }, '🚨 COMPLEXO')
+                                                        ),
+
+
+
+                                                        h('div', { 
+                                                            style: { 
+                                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                                padding: '16px',
+                                                                borderRadius: '8px',
+                                                                margin: '16px 0'
+                                                            }
+                                                        },
+                                                            h('h5', { style: { color: '#ffd700', margin: '0 0 8px 0' } }, '📝 Descrição:'),
+                                                            h('p', { style: { color: '#fff', margin: 0, lineHeight: '1.5', fontSize: '1rem' } }, feedback.descricao)
+                                                        ),
+
+                                                        feedback.anexo_url && h('div', { style: { margin: '16px 0' } },
+                                                            h('a', { 
+                                                                href: feedback.anexo_url, 
+                                                                target: '_blank',
+                                                                style: { 
+                                                                    color: '#32CD32', 
+                                                                    textDecoration: 'underline',
+                                                                    fontSize: '1rem',
+                                                                    fontWeight: '600'
+                                                                } 
+                                                            }, '📎 Ver Anexo do Discord')
+                                                        ),
+
+                                                        h('div', { style: { display: 'flex', gap: '16px', marginTop: '20px' } },
+                                                            h('button', {
+                                                                onClick: async () => {
+                                                                    if (!feedback || !feedback.id) {
+                                                                        alert('❌ Erro: Feedback inválido');
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    const resposta = prompt('✅ APROVAR FEEDBACK\n\nDigite sua resposta/justificativa:');
+                                                                    if (resposta && resposta.trim()) {
+                                                                        try {
+                                                                            console.log('📤 Aprovando feedback:', feedback.id);
+                                                                            await saveToSupabase('feedbacks_prefeitura', {
+                                                                                id: feedback.id,
+                                                                                status: 'aprovado',
+                                                                                resposta_aprovador: resposta,
+                                                                                aprovador_nome: currentUser.nome,
+                                                                                aprovador_cargo: currentUser.cargo,
+                                                                                data_resposta: new Date().toISOString()
+                                                                            }, true);
+                                                                            refetchFeedbacks();
+                                                                            alert('✅ Feedback aprovado com sucesso!');
+                                                                        } catch (error) {
+                                                                            console.error('❌ Erro ao aprovar feedback:', error);
+                                                                            alert(`❌ Erro ao aprovar feedback: ${error.message || 'Erro desconhecido'}`);
+                                                                        }
+                                                                    }
+                                                                },
+                                                                style: {
+                                                                    flex: 1,
+                                                                    padding: '12px 20px',
+                                                                    background: 'linear-gradient(45deg, #32CD32, #228B22)',
+                                                                    color: '#000',
+                                                                    border: '2px solid #32CD32',
+                                                                    borderRadius: '10px',
+                                                                    fontSize: '1rem',
+                                                                    fontWeight: '700',
+                                                                    cursor: 'pointer'
+                                                                }
+                                                            }, '✅ Aprovar'),
+
+                                                            h('button', {
+                                                                onClick: async () => {
+                                                                    if (!feedback || !feedback.id) {
+                                                                        alert('❌ Erro: Feedback inválido');
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    const resposta = prompt('❌ NEGAR FEEDBACK\n\nDigite o motivo da negação:');
+                                                                    if (resposta && resposta.trim()) {
+                                                                        try {
+                                                                            console.log('📤 Negando feedback:', feedback.id);
+                                                                            await saveToSupabase('feedbacks_prefeitura', {
+                                                                                id: feedback.id,
+                                                                                status: 'negado',
+                                                                                resposta_aprovador: resposta,
+                                                                                aprovador_nome: currentUser.nome,
+                                                                                aprovador_cargo: currentUser.cargo,
+                                                                                data_resposta: new Date().toISOString()
+                                                                            }, true);
+                                                                            refetchFeedbacks();
+                                                                            alert('❌ Feedback negado com sucesso!');
+                                                                        } catch (error) {
+                                                                            console.error('❌ Erro ao negar feedback:', error);
+                                                                            alert(`❌ Erro ao negar feedback: ${error.message || 'Erro desconhecido'}`);
+                                                                        }
+                                                                    }
+                                                                },
+                                                                style: {
+                                                                    flex: 1,
+                                                                    padding: '12px 20px',
+                                                                    background: 'linear-gradient(45deg, #ff6b6b, #DC143C)',
+                                                                    color: '#fff',
+                                                                    border: '2px solid #ff6b6b',
+                                                                    borderRadius: '10px',
+                                                                    fontSize: '1rem',
+                                                                    fontWeight: '700',
+                                                                    cursor: 'pointer'
+                                                                }
+                                                            }, '❌ Negar')
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        );
+                                    
+                                    default:
+                                        return null;
+                                }
+                            })()
+                        );
+                        
+                        } catch (error) {
+                            console.error('🚨 ERRO CRÍTICO na FeedbackPrefeituraPage:', error);
+                            return h('div', { 
+                                style: { 
+                                    padding: '40px', 
+                                    textAlign: 'center',
+                                    background: 'rgba(220, 20, 60, 0.1)',
+                                    border: '2px solid #ff6b6b',
+                                    borderRadius: '15px',
+                                    margin: '20px'
+                                } 
+                            },
+                                h('h2', { style: { color: '#ff6b6b', marginBottom: '16px' } }, '❌ Erro na Página de Feedback'),
+                                h('p', { style: { color: '#fff', marginBottom: '16px' } }, `Erro: ${error.message}`),
+                                h('button', {
+                                    onClick: () => window.location.reload(),
+                                    style: {
+                                        padding: '12px 24px',
+                                        background: '#ffd700',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                    }
+                                }, '🔄 Recarregar Página')
+                            );
+                        }
+                    };
+
                     // Página de Administração (somente CEO/Diretor)
                     const AdminPage = () => {
                         const [activeTab, setActiveTab] = useState('usuarios');
@@ -4570,6 +5452,8 @@
                             return h(FinanceiroPage);
                         case 'legislativo':
                             return h(LegislativoPage);
+                        case 'feedback':
+                            return h(FeedbackPrefeituraPage);
 
                         case 'admin':
                             return (currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor') 
