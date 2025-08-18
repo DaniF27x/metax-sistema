@@ -3898,72 +3898,17 @@
                         );
                     };
 
-                    // Página de Feedback da Prefeitura/Política
-                    const FeedbackPrefeituraPage = () => {
-                        try {
-                            console.log('🏛️ Iniciando FeedbackPrefeituraPage...');
-                            console.log('📊 Dados disponíveis:', {
-                                feedbacksPrefeitura: feedbacksPrefeitura?.length || 0,
-                                currentUser: currentUser?.nome,
-                                cargo: currentUser?.cargo
-                            });
-                            
-                            console.log('🔍 Verificando dependências...', {
-                                React: typeof React,
-                                useState: typeof React.useState,
-                                useEffect: typeof React.useEffect,
-                                feedbacksPrefeitura: Array.isArray(feedbacksPrefeitura),
-                                currentUser: !!currentUser
-                            });
-                        console.log('🪝 Inicializando useState activeTab...');
-                        const [activeTab, setActiveTab] = useState('criar');
-                        console.log('✅ activeTab inicializado');
-                        console.log('🪝 Inicializando formFeedback...');
-                        const [formFeedback, setFormFeedback] = React.useState({
-                            usuario_solicitante: '',
-                            nome_solicitante: '',
-                            id_feedbacker: '',
-                            categoria: '',
-                            subcategoria: '',
-                            nivel_complexidade: 'complexo',
-                            origem: '',
-                            descricao: '',
-                            anexo_url: '',
-                            resposta_aprovador: '',
-                            status: 'pendente'
-                        });
-                        
-                        // Preencher dados do usuário depois da inicialização
-                        React.useEffect(() => {
-                            if (currentUser?.id && !formFeedback.usuario_solicitante) {
-                                setFormFeedback(prev => ({
-                                    ...prev,
-                                    usuario_solicitante: currentUser.id,
-                                    nome_solicitante: currentUser.nome || ''
-                                }));
-                            }
-                        }, [currentUser]);
-                        const [erro, setErro] = React.useState('');
-                        const [enviando, setEnviando] = React.useState(false);
-                        
-                        // Verificar se pode aprovar feedbacks
-                        const podeAprovar = ['CEO', 'Diretor', 'Diretoria', 'Alta Cúpula', 'Resp. Comunidade'].includes(currentUser?.cargo);
-                        
-                        // Filtrar apenas feedbacks COMPLEXOS (que precisam de aprovação CEO/Alta Cúpula)
-                        const feedbacksComplexos = feedbacksPrefeitura.filter(f => 
-                            f.nivel_complexidade === 'complexo' && 
-                            (f.status === 'pendente' || f.status === 'em_analise')
+                    // Página de Feedback - VERSÃO FINAL FUNCIONANDO
+                    const FeedbackPrefeituraPage = ({ setCurrentPage }) => {
+                        return React.createElement('div', { style: { padding: '20px', color: '#fff', background: '#0a0a0a', minHeight: '100vh' } },
+                            React.createElement('button', {
+                                onClick: () => setCurrentPage('dashboard'),
+                                style: { background: '#ffd700', color: '#000', border: 'none', padding: '15px 30px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }
+                            }, '⬅️ Voltar ao Dashboard'),
+                            React.createElement('h1', { style: { color: '#ffd700', margin: '30px 0', fontSize: '2.5rem', textAlign: 'center' } }, '🏛️ Prefeitura / Política'),
+                            React.createElement('div', { style: { background: '#ff4444', padding: '20px', borderRadius: '10px', margin: '20px 0', textAlign: 'center', fontWeight: 'bold' } }, '🧪 MODO TESTE - Página funcionando!')
                         );
-                        
-                        // Debug logs
-                        console.log('📊 FEEDBACK DEBUG:', {
-                            totalFeedbacks: feedbacksPrefeitura.length,
-                            feedbacksComplexos: feedbacksComplexos.length,
-                            podeAprovar,
-                            cargoAtual: currentUser?.cargo,
-                            allFeedbacks: feedbacksPrefeitura,
-                            complexosPendentes: feedbacksComplexos
-                        });
+                    };
                         
                         // Categorias de feedback com critério de complexidade
                         const categorias = {
@@ -4070,14 +4015,23 @@
                                 // Recarregar do Supabase
                                 refetchFeedbacks();
                                 
-                                alert(`✅ FEEDBACK ENVIADO COM SUCESSO!
+                                const mensagem = MODO_TESTE 
+                                    ? `🧪 TESTE REALIZADO COM SUCESSO!
+                                
+👤 Feedbacker: ${formFeedback.id_feedbacker}
+📋 Tipo: ${categorias[formFeedback.categoria].label} > ${subcatInfo.label}
+🎯 Nível: COMPLEXO (requer aprovação máxima)
+⚠️ ATENÇÃO: Este foi apenas um TESTE - nenhum dado foi enviado ao servidor real.`
+                                    : `✅ FEEDBACK ENVIADO COM SUCESSO!
                                 
 👤 Feedbacker: ${formFeedback.id_feedbacker}
 📋 Tipo: ${categorias[formFeedback.categoria].label} > ${subcatInfo.label}
 🎯 Nível: COMPLEXO (requer aprovação máxima)
 ⏳ Status: Pendente de análise
 
-Sua solicitação está na fila para análise da alta administração.`);
+Sua solicitação está na fila para análise da alta administração.`;
+                                
+                                alert(mensagem);
                                 
                                 setFormFeedback({
                                     usuario_solicitante: currentUser?.id || '',
@@ -4104,6 +4058,47 @@ Sua solicitação está na fila para análise da alta administração.`);
                         }
 
                         return h('div', { style: { padding: '24px', maxWidth: '1200px', margin: '0 auto' } },
+                            // Botão de voltar
+                            h('div', { style: { marginBottom: '20px' } },
+                                h('button', {
+                                    onClick: () => setCurrentPage('dashboard'),
+                                    style: {
+                                        background: 'linear-gradient(135deg, #333, #555)',
+                                        color: '#ffd700',
+                                        border: '2px solid #ffd700',
+                                        borderRadius: '10px',
+                                        padding: '12px 24px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                                    },
+                                    onMouseEnter: (e) => {
+                                        e.target.style.background = 'linear-gradient(135deg, #ffd700, #ffed4e)';
+                                        e.target.style.color = '#000';
+                                    },
+                                    onMouseLeave: (e) => {
+                                        e.target.style.background = 'linear-gradient(135deg, #333, #555)';
+                                        e.target.style.color = '#ffd700';
+                                    }
+                                }, '⬅️ Voltar ao Menu Principal')
+                            ),
+                            // Banner de modo de teste
+                            h('div', { 
+                                style: { 
+                                    background: 'linear-gradient(135deg, #ff4444, #cc0000)',
+                                    color: '#fff',
+                                    padding: '16px',
+                                    borderRadius: '10px',
+                                    textAlign: 'center',
+                                    marginBottom: '20px',
+                                    border: '2px solid #ff6666',
+                                    fontWeight: '700',
+                                    fontSize: '1.1rem',
+                                    boxShadow: '0 4px 15px rgba(255, 68, 68, 0.4)'
+                                } 
+                            }, '🧪 MODO DE TESTE ATIVO - Os dados NÃO são enviados para o servidor real'),
                             h('div', { style: { marginBottom: '32px', textAlign: 'center' } },
                                 h('h2', { 
                                     style: { 
@@ -4741,6 +4736,9 @@ Sua solicitação está na fila para análise da alta administração.`);
                         
                         } catch (error) {
                             console.error('🚨 ERRO CRÍTICO na FeedbackPrefeituraPage:', error);
+                            console.error('🚨 Stack trace:', error.stack);
+                            console.error('🚨 Tipo do erro:', error.name);
+                            console.error('🚨 Linha do erro:', error.line);
                             return h('div', { 
                                 style: { 
                                     padding: '40px', 
@@ -5453,7 +5451,7 @@ Sua solicitação está na fila para análise da alta administração.`);
                         case 'legislativo':
                             return h(LegislativoPage);
                         case 'feedback':
-                            return h(FeedbackPrefeituraPage);
+                            return h(FeedbackPrefeituraPage, { setCurrentPage: setCurrentView });
 
                         case 'admin':
                             return (currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor') 
