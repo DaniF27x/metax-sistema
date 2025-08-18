@@ -3898,17 +3898,72 @@
                         );
                     };
 
-                    // Página de Feedback - VERSÃO FINAL FUNCIONANDO
-                    const FeedbackPrefeituraPage = ({ setCurrentPage }) => {
-                        return React.createElement('div', { style: { padding: '20px', color: '#fff', background: '#0a0a0a', minHeight: '100vh' } },
-                            React.createElement('button', {
-                                onClick: () => setCurrentPage('dashboard'),
-                                style: { background: '#ffd700', color: '#000', border: 'none', padding: '15px 30px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }
-                            }, '⬅️ Voltar ao Dashboard'),
-                            React.createElement('h1', { style: { color: '#ffd700', margin: '30px 0', fontSize: '2.5rem', textAlign: 'center' } }, '🏛️ Prefeitura / Política'),
-                            React.createElement('div', { style: { background: '#ff4444', padding: '20px', borderRadius: '10px', margin: '20px 0', textAlign: 'center', fontWeight: 'bold' } }, '🧪 MODO TESTE - Página funcionando!')
+                    // Página de Feedback da Prefeitura/Política
+                    const FeedbackPrefeituraPage = () => {
+                        try {
+                            console.log('🏛️ Iniciando FeedbackPrefeituraPage...');
+                            console.log('📊 Dados disponíveis:', {
+                                feedbacksPrefeitura: feedbacksPrefeitura?.length || 0,
+                                currentUser: currentUser?.nome,
+                                cargo: currentUser?.cargo
+                            });
+                            
+                            console.log('🔍 Verificando dependências...', {
+                                React: typeof React,
+                                useState: typeof React.useState,
+                                useEffect: typeof React.useEffect,
+                                feedbacksPrefeitura: Array.isArray(feedbacksPrefeitura),
+                                currentUser: !!currentUser
+                            });
+                        console.log('🪝 Inicializando useState activeTab...');
+                        const [activeTab, setActiveTab] = useState('criar');
+                        console.log('✅ activeTab inicializado');
+                        console.log('🪝 Inicializando formFeedback...');
+                        const [formFeedback, setFormFeedback] = React.useState({
+                            usuario_solicitante: '',
+                            nome_solicitante: '',
+                            id_feedbacker: '',
+                            categoria: '',
+                            subcategoria: '',
+                            nivel_complexidade: 'complexo',
+                            origem: '',
+                            descricao: '',
+                            anexo_url: '',
+                            resposta_aprovador: '',
+                            status: 'pendente'
+                        });
+                        
+                        // Preencher dados do usuário depois da inicialização
+                        React.useEffect(() => {
+                            if (currentUser?.id && !formFeedback.usuario_solicitante) {
+                                setFormFeedback(prev => ({
+                                    ...prev,
+                                    usuario_solicitante: currentUser.id,
+                                    nome_solicitante: currentUser.nome || ''
+                                }));
+                            }
+                        }, [currentUser]);
+                        const [erro, setErro] = React.useState('');
+                        const [enviando, setEnviando] = React.useState(false);
+                        
+                        // Verificar se pode aprovar feedbacks
+                        const podeAprovar = ['CEO', 'Diretor', 'Diretoria', 'Alta Cúpula', 'Resp. Comunidade'].includes(currentUser?.cargo);
+                        
+                        // Filtrar apenas feedbacks COMPLEXOS (que precisam de aprovação CEO/Alta Cúpula)
+                        const feedbacksComplexos = feedbacksPrefeitura.filter(f => 
+                            f.nivel_complexidade === 'complexo' && 
+                            (f.status === 'pendente' || f.status === 'em_analise')
                         );
-                    };
+                        
+                        // Debug logs
+                        console.log('📊 FEEDBACK DEBUG:', {
+                            totalFeedbacks: feedbacksPrefeitura.length,
+                            feedbacksComplexos: feedbacksComplexos.length,
+                            podeAprovar,
+                            cargoAtual: currentUser?.cargo,
+                            allFeedbacks: feedbacksPrefeitura,
+                            complexosPendentes: feedbacksComplexos
+                        });
                         
                         // Categorias de feedback com critério de complexidade
                         const categorias = {
@@ -4061,7 +4116,7 @@ Sua solicitação está na fila para análise da alta administração.`;
                             // Botão de voltar
                             h('div', { style: { marginBottom: '20px' } },
                                 h('button', {
-                                    onClick: () => setCurrentPage('dashboard'),
+                                    onClick: () => setCurrentPage('home'),
                                     style: {
                                         background: 'linear-gradient(135deg, #333, #555)',
                                         color: '#ffd700',
@@ -4736,9 +4791,6 @@ Sua solicitação está na fila para análise da alta administração.`;
                         
                         } catch (error) {
                             console.error('🚨 ERRO CRÍTICO na FeedbackPrefeituraPage:', error);
-                            console.error('🚨 Stack trace:', error.stack);
-                            console.error('🚨 Tipo do erro:', error.name);
-                            console.error('🚨 Linha do erro:', error.line);
                             return h('div', { 
                                 style: { 
                                     padding: '40px', 
@@ -5451,7 +5503,7 @@ Sua solicitação está na fila para análise da alta administração.`;
                         case 'legislativo':
                             return h(LegislativoPage);
                         case 'feedback':
-                            return h(FeedbackPrefeituraPage, { setCurrentPage: setCurrentView });
+                            return h(FeedbackPrefeituraPage);
 
                         case 'admin':
                             return (currentUser?.cargo === 'CEO' || currentUser?.cargo === 'Diretor') 
