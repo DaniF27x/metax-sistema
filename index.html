@@ -3897,6 +3897,73 @@
                             )
                         );
                     };
+
+                    // Página de Feedback da Prefeitura/Política
+                    const FeedbackPrefeituraPage = () => {
+                        try {
+                            console.log('🏛️ Iniciando FeedbackPrefeituraPage...');
+                            console.log('📊 Dados disponíveis:', {
+                                feedbacksPrefeitura: feedbacksPrefeitura?.length || 0,
+                                currentUser: currentUser?.nome,
+                                cargo: currentUser?.cargo
+                            });
+                            
+                            console.log('🔍 Verificando dependências...', {
+                                React: typeof React,
+                                useState: typeof React.useState,
+                                useEffect: typeof React.useEffect,
+                                feedbacksPrefeitura: Array.isArray(feedbacksPrefeitura),
+                                currentUser: !!currentUser
+                            });
+                        console.log('🪝 Inicializando useState activeTab...');
+                        const [activeTab, setActiveTab] = useState('criar');
+                        console.log('✅ activeTab inicializado');
+                        console.log('🪝 Inicializando formFeedback...');
+                        const [formFeedback, setFormFeedback] = React.useState({
+                            usuario_solicitante: '',
+                            nome_solicitante: '',
+                            id_feedbacker: '',
+                            categoria: '',
+                            subcategoria: '',
+                            nivel_complexidade: 'complexo',
+                            origem: '',
+                            descricao: '',
+                            anexo_url: '',
+                            resposta_aprovador: '',
+                            status: 'pendente'
+                        });
+                        
+                        // Preencher dados do usuário depois da inicialização
+                        React.useEffect(() => {
+                            if (currentUser?.id && !formFeedback.usuario_solicitante) {
+                                setFormFeedback(prev => ({
+                                    ...prev,
+                                    usuario_solicitante: currentUser.id,
+                                    nome_solicitante: currentUser.nome || ''
+                                }));
+                            }
+                        }, [currentUser]);
+                        const [erro, setErro] = React.useState('');
+                        const [enviando, setEnviando] = React.useState(false);
+                        
+                        // Verificar se pode aprovar feedbacks
+                        const podeAprovar = ['CEO', 'Diretor', 'Diretoria', 'Alta Cúpula', 'Resp. Comunidade'].includes(currentUser?.cargo);
+                        
+                        // Filtrar apenas feedbacks COMPLEXOS (que precisam de aprovação CEO/Alta Cúpula)
+                        const feedbacksComplexos = feedbacksPrefeitura.filter(f => 
+                            f.nivel_complexidade === 'complexo' && 
+                            (f.status === 'pendente' || f.status === 'em_analise')
+                        );
+                        
+                        // Debug logs
+                        console.log('📊 FEEDBACK DEBUG:', {
+                            totalFeedbacks: feedbacksPrefeitura.length,
+                            feedbacksComplexos: feedbacksComplexos.length,
+                            podeAprovar,
+                            cargoAtual: currentUser?.cargo,
+                            allFeedbacks: feedbacksPrefeitura,
+                            complexosPendentes: feedbacksComplexos
+                        });
                         
                         // Categorias de feedback com critério de complexidade
                         const categorias = {
@@ -5506,4 +5573,3 @@ Sua solicitação está na fila para análise da alta administração.`;
     </script>
 </body>
 </html>
-
