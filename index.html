@@ -1333,7 +1333,7 @@
                     // Página de Checklist
                     const ChecklistPage = () => {
                         const [novoChecklist, setNovoChecklist] = useState({
-                            id: '', servidor: '', funcionario: '', observacao: '', aprovador: '',
+                            id: '', servidor: '', Nome: '', observacao: '', aprovador: '',
                             // Perguntas Staff
                             pontualidade: '', organizacao: '', comunicacao: '', relacionamento: '', conhecimento: '', dedicacao: '', lideranca: '', resolucao: '', iniciativa: '', etica: '',
                             // Perguntas RP
@@ -1384,7 +1384,7 @@
                         const handleSubmitChecklist = (e) => {
                             e.preventDefault();
                             
-                            if (!novoChecklist.id || !novoChecklist.servidor || !novoChecklist.funcionario) {
+                            if (!novoChecklist.id || !novoChecklist.servidor || !novoChecklist.Nome) {
                                 alert('⚠️ Preencha todos os campos obrigatórios!');
                                 return;
                             }
@@ -1417,7 +1417,7 @@
 
                             setChecklists([...checklists, checklist]);
                             setNovoChecklist({
-                                id: '', servidor: '', funcionario: '', observacao: '', aprovador: '',
+                                id: '', servidor: '', Nome: '', observacao: '', aprovador: '',
                                 pontualidade: '', organizacao: '', comunicacao: '', relacionamento: '', conhecimento: '', dedicacao: '', lideranca: '', resolucao: '', iniciativa: '', etica: '',
                                 interpretacao: '', criatividade: '', adaptacao: '', consistencia: '', interacao: '', narrativa: '', emocional: '', improvisacao: '', imersao: '', conflito: ''
                             });
@@ -1566,7 +1566,7 @@
                                             ),
                                             // Campos básicos
                                             h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '30px' } },
-                                                ['id', 'servidor', 'funcionario'].map(field => 
+                                                ['id', 'servidor', 'Nome'].map(field => 
                                                     h('div', { key: field },
                                                         h('label', { 
                                                             style: { 
@@ -1777,7 +1777,7 @@
                                                 ),
                                                 h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', color: '#fff' } },
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Servidor: '), checklist.servidor),
-                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Funcionário: '), checklist.funcionario),
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Funcionário: '), checklist.Nome),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Tipo: '), checklist.tipo === 'staff' ? 'Staff' : `RP - ${checklist.orgRP?.toUpperCase() || 'Geral'}`),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Nota: '), `${checklist.nota}/100`),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Data: '), new Date(checklist.createdAt).toLocaleDateString('pt-BR'))
@@ -1816,7 +1816,7 @@
                     // Página de Auditoria
                     const AuditoriaPage = () => {
                         const [novaAuditoria, setNovaAuditoria] = useState({
-                            id: '', servidor: '', funcionario: '', observacao: '', aprovador: '',
+                            id: '', servidor: '', Nome: '', observacao: '', aprovador: '',
                             // Perguntas Gerais
                             conhecimentoRegras: '', aplicacaoRegras: '', postura: '', comunicacaoEquipe: '', resolucaoConflitos: '', eticaProfissional: '', disponibilidade: '', pontualidade: '', organizacao: '', proatividade: '',
                             // Perguntas Staff específicas
@@ -2050,7 +2050,7 @@
                         const handleSubmitAuditoria = (e) => {
                             e.preventDefault();
                             
-                            if (!novaAuditoria.id || !novaAuditoria.servidor || !novaAuditoria.funcionario) {
+                            if (!novaAuditoria.id || !novaAuditoria.servidor || !novaAuditoria.Nome) {
                                 alert('⚠️ Preencha todos os campos obrigatórios!');
                                 return;
                             }
@@ -2086,7 +2086,7 @@
 
                             setAuditorias([...auditorias, auditoria]);
                             setNovaAuditoria({
-                                id: '', servidor: '', funcionario: '', observacao: '', aprovador: '',
+                                id: '', servidor: '', Nome: '', observacao: '', aprovador: '',
                                 conhecimentoRegras: '', aplicacaoRegras: '', postura: '', comunicacaoEquipe: '', resolucaoConflitos: '', eticaProfissional: '', disponibilidade: '', pontualidade: '', organizacao: '', proatividade: '',
                                 lideranca: '', mentoria: '', gestaoEquipe: '', tomadaDecisao: '', planificacao: '', delegacao: '', motivacao: '', feedbacks: '', resolucaoProblemas: '', visaoEstrategica: '',
                                 interpretacao: '', criatividade: '', adaptacao: '', consistencia: '', narrativa: '', expressaoEmocional: '', improvisacao: '', imersao: '', gestaoConflitosRP: '', construcaoPersonagem: ''
@@ -2277,7 +2277,7 @@
                                             ),
                                             // Campos básicos
                                             h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '30px' } },
-                                                ['id', 'servidor', 'funcionario'].map(field => 
+                                                ['id', 'servidor', 'Nome'].map(field => 
                                                     h('div', { key: field },
                                                         h('label', { 
                                                             style: { 
@@ -2534,7 +2534,7 @@
                                                 ),
                                                 h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', color: '#fff' } },
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Servidor: '), auditoria.servidor),
-                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Funcionário: '), auditoria.funcionario),
+                                                    h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Funcionário: '), auditoria.Nome),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Tipo: '), auditoria.tipo === 'staff' ? `Staff - ${auditoria.pastaStaff?.toUpperCase() || 'Geral'}` : `RP - ${auditoria.orgRP?.toUpperCase() || 'Geral'}`),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Nota: '), `${auditoria.nota}/${auditoria.notaMaxima || 200}`),
                                                     h('p', { style: { margin: 0 } }, h('strong', { style: { color: '#ffd700' } }, 'Data: '), new Date(auditoria.createdAt).toLocaleDateString('pt-BR'))
@@ -5119,7 +5119,7 @@ Sua solicitação está na fila para análise da alta administração.`;
                                                         ),
                                                         h('div', { style: { color: '#fff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' } },
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Servidor: '), checklist.servidor),
-                                                            h('p', { style: { margin: 0 } }, h('strong', null, 'Funcionário: '), checklist.funcionario),
+                                                            h('p', { style: { margin: 0 } }, h('strong', null, 'Funcionário: '), checklist.Nome),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Nota: '), `${checklist.nota}/100`),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Tipo: '), checklist.tipo === 'staff' ? 'Staff' : `RP - ${checklist.orgRP?.toUpperCase() || 'Geral'}`),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Autor: '), `${checklist.autorNome} (${checklist.autorCargo})`)
@@ -5178,7 +5178,7 @@ Sua solicitação está na fila para análise da alta administração.`;
                                                         ),
                                                         h('div', { style: { color: '#fff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' } },
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Servidor: '), auditoria.servidor),
-                                                            h('p', { style: { margin: 0 } }, h('strong', null, 'Funcionário: '), auditoria.funcionario),
+                                                            h('p', { style: { margin: 0 } }, h('strong', null, 'Funcionário: '), auditoria.Nome),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Nota: '), `${auditoria.nota}/${auditoria.notaMaxima || 140}`),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Tipo: '), auditoria.tipo === 'staff' ? `Staff - ${auditoria.pastaStaff?.toUpperCase() || 'Geral'}` : `RP - ${auditoria.orgRP?.toUpperCase() || 'Geral'}`),
                                                             h('p', { style: { margin: 0 } }, h('strong', null, 'Autor: '), `${auditoria.autorNome} (${auditoria.autorCargo})`)
